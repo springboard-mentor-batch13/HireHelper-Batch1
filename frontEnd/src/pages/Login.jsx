@@ -1,8 +1,53 @@
 import { TextField, Button } from "@mui/material";
 import EmailIcon from "@mui/icons-material/Email";
 import LockIcon from "@mui/icons-material/Lock";
+import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { api, setToken } from "../lib/api";
 
 const Login = () => {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const canSubmit = useMemo(() => {
+    return email.trim() && password && !loading;
+  }, [email, password, loading]);
+
+  async function onLogin() {
+    try {
+      setError("");
+      setLoading(true);
+
+      const data = await api.post("/api/auth/login", {
+        email_id: email.trim(),
+        password,
+      });
+
+      if (data?.requiresOtp) {
+        sessionStorage.setItem("otp_email_id", email.trim());
+        navigate("/verify-otp");
+        return;
+      }
+
+      if (data?.token) setToken(data.token);
+      navigate("/dashboard");
+    } catch (e) {
+      // If backend returns requiresOtp via error (it currently returns 403 with JSON),
+      // surface the message and allow user to navigate.
+      if (e?.data?.requiresOtp) {
+        sessionStorage.setItem("otp_email_id", email.trim());
+        navigate("/verify-otp");
+        return;
+      }
+      setError(e.message || "Login failed");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div style={styles.container}>
       <div style={styles.card}>
@@ -15,6 +60,8 @@ const Login = () => {
             fullWidth
             label="Email"
             variant="outlined"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
         </div>
 
@@ -25,19 +72,28 @@ const Login = () => {
             label="Password"
             type="password"
             variant="outlined"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
           />
         </div>
+
+        {error ? <p style={styles.error}>{error}</p> : null}
 
         <Button
           variant="contained"
           fullWidth
           style={styles.button}
+          disabled={!canSubmit}
+          onClick={onLogin}
         >
-          Login
+          {loading ? "Logging in..." : "Login"}
         </Button>
 
         <p style={styles.footer}>
-          Don’t have an account? <span style={styles.link}>Register</span>
+          Don’t have an account?{" "}
+          <span style={styles.link} onClick={() => navigate("/register")}>
+            Register
+          </span>
         </p>
       </div>
     </div>
@@ -88,6 +144,12 @@ const styles = {
     color: "#2563eb",
     cursor: "pointer",
     fontWeight: "500",
+  },
+  error: {
+    color: "#b91c1c",
+    marginTop: "0px",
+    marginBottom: "14px",
+    fontSize: "14px",
   },
 };
 
