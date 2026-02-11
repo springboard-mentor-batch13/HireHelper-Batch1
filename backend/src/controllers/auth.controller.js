@@ -1,0 +1,189 @@
+const { User } = require("../models/User");
+const { signAuthToken, authCookieOptions } = require("../utils/jwt");
+const { generateOtpCode, hashOtp, otpExpiryDate } = require("../services/otp.service");
+const { sendOtpEmail } = require("../services/email.service");
+
+function validateEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || "").trim());
+}
+
+function setAuthCookie(res, userId) {
+  const token = signAuthToken({ sub: userId });
+  res.cookie("auth_token", token, authCookieOptions());
+  return token;
+}
+
+async function register(req, res, next) {
+  try {
+    const { first_name, last_name, phone_number, email_id, password, profile_picture } = req.body || {};
+
+    if (!first_name || !last_name || !phone_number || !email_id || !password) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+    if (!validateEmail(email_id)) {
+      return res.status(400).json({ message: "Invalid email" });
+    }
+    if (String(password).length < 8) {
+      return res.status(400).json({ message: "Password must be at least 8 characters" });
+    }
+
+    const exists = await User.findOne({ email_id: String(email_id).toLowerCase().trim() }).lean();
+    if (exists) {
+      return res.status(409).json({ message: "Email already registered" });
+    }
+
+    const user = await User.create({
+      first_name,
+      last_name,
+      phone_number,
+      email_id,
+      password,
+      profile_picture: profile_picture || "",
+      is_email_verified: false,
+    });
+
+    // Create OTP now (verification "later" is already supported by endpoints).
+    const otp = generateOtpCode();
+    user.otp_code_hash = hashOtp(otp);
+    user.otp_expires_at = otpExpiryDate(10);
+    user.otp_last_sent_at = new Date();
+    user.otp_attempts = 0;
+    await user.save();
+
+    await sendOtpEmail({ to: user.email_id, code: otp });
+
+    return res.status(201).json({
+      message: "Registered. OTP sent.",
+      user: user.toSafeJSON(),
+      requiresOtp: true,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function login(req, res, next) {
+  try {
+    const { email_id, password } = req.body || {};
+    if (!email_id || !password) {
+      return res.status(400).json({ message: "Missing email or password" });
+    }
+    if (!validateEmail(email_id)) {
+      return res.status(400).json({ message: "Invalid email" });
+    }
+
+    const user = await User.findOne({ email_id: String(email_id).toLowerCase().trim() }).select("+password +otp_code_hash");
+    if (!user) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    const ok = await user.comparePassword(password);
+    if (!ok) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    if (!user.is_email_verified) {
+      return res.status(403).json({
+        message: "Email not verified. Please verify OTP.",
+        requiresOtp: true,
+        user: user.toSafeJSON(),
+      });
+    }
+
+    const token = setAuthCookie(res, user.id);
+    return res.json({ message: "Logged in", token, user: user.toSafeJSON() });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function logout(req, res) {
+  res.clearCookie("auth_token", authCookieOptions());
+  return res.json({ message: "Logged out" });
+}
+
+async function me(req, res) {
+  return res.json({ user: req.user });
+}
+
+async function sendOtp(req, res, next) {
+  try {
+    const { email_id } = req.body || {};
+    if (!email_id || !validateEmail(email_id)) {
+      return res.status(400).json({ message: "Invalid email" });
+    }
+
+    const user = await User.findOne({ email_id: String(email_id).toLowerCase().trim() }).select("+otp_code_hash");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Basic resend throttle: 60 seconds
+    if (user.otp_last_sent_at && Date.now() - user.otp_last_sent_at.getTime() < 60_000) {
+      return res.status(429).json({ message: "Please wait before requesting another OTP" });
+    }
+
+    const otp = generateOtpCode();
+    user.otp_code_hash = hashOtp(otp);
+    user.otp_expires_at = otpExpiryDate(10);
+    user.otp_last_sent_at = new Date();
+    user.otp_attempts = 0;
+    await user.save();
+
+    await sendOtpEmail({ to: user.email_id, code: otp });
+    return res.json({ message: "OTP sent" });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function verifyOtp(req, res, next) {
+  try {
+    const { email_id, code } = req.body || {};
+    if (!email_id || !validateEmail(email_id)) {
+      return res.status(400).json({ message: "Invalid email" });
+    }
+    if (!code || String(code).length !== 4) {
+      return res.status(400).json({ message: "Invalid code" });
+    }
+
+    const user = await User.findOne({ email_id: String(email_id).toLowerCase().trim() }).select("+otp_code_hash");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (!user.otp_code_hash || !user.otp_expires_at) {
+      return res.status(400).json({ message: "No OTP requested" });
+    }
+    if (user.otp_expires_at.getTime() < Date.now()) {
+      return res.status(400).json({ message: "OTP expired" });
+    }
+
+    user.otp_attempts = (user.otp_attempts || 0) + 1;
+    if (user.otp_attempts > 10) {
+      await user.save();
+      return res.status(429).json({ message: "Too many attempts. Please request a new OTP." });
+    }
+
+    const expectedHash = user.otp_code_hash;
+    const actualHash = hashOtp(String(code));
+    if (actualHash !== expectedHash) {
+      await user.save();
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
+
+    user.is_email_verified = true;
+    user.otp_code_hash = "";
+    user.otp_expires_at = null;
+    user.otp_attempts = 0;
+    await user.save();
+
+    const token = setAuthCookie(res, user.id);
+    return res.json({ message: "OTP verified", token, user: user.toSafeJSON() });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { register, login, logout, me, sendOtp, verifyOtp };
+
