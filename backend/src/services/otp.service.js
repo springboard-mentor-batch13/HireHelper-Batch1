@@ -7,7 +7,7 @@ function generateOtpCode() {
 }
 
 function hashOtp(code) {
-  const pepper = process.env.OTP_PEPPER;
+  const pepper = process.env.OTP_PEPPER || "adahkshdkaskfknk";
   if (!pepper) throw new Error("Missing OTP_PEPPER");
   return crypto.createHash("sha256").update(`${pepper}:${code}`).digest("hex");
 }

@@ -1,4 +1,9 @@
-require("dotenv").config();
+const path = require("path");
+
+// Always load backend/.env, regardless of where node/nodemon is run from
+require("dotenv").config({
+  path: path.join(__dirname, "..", ".env"),
+});
 
 const { createApp } = require("./app");
 const { connectDb } = require("./config/db");
