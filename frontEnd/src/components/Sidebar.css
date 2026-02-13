@@ -48,3 +48,13 @@
   color: #ffffff;
   font-weight: 500;
 }
+
+.logout {
+  margin-top: auto;
+  cursor: pointer;
+  color: #f87171;
+}
+
+.logout:hover {
+  background-color: rgba(248, 113, 113, 0.15);
+}
