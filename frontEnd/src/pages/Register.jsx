@@ -1,10 +1,11 @@
+import { useMemo, useState } from "react";
 import { TextField, Button } from "@mui/material";
 import PersonIcon from "@mui/icons-material/Person";
 import EmailIcon from "@mui/icons-material/Email";
 import LockIcon from "@mui/icons-material/Lock";
 import PhoneIcon from "@mui/icons-material/Phone";
-import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import { api } from "../lib/api";
 
 const Register = () => {
@@ -15,7 +16,6 @@ const Register = () => {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
   const canSubmit = useMemo(() => {
     return (
@@ -30,7 +30,6 @@ const Register = () => {
 
   async function onRegister() {
     try {
-      setError("");
       setLoading(true);
 
       const data = await api.post("/api/auth/register", {
@@ -43,75 +42,111 @@ const Register = () => {
       });
 
       sessionStorage.setItem("otp_email_id", data?.user?.email_id || email.trim());
+      toast.success("Registration successful! Please verify your OTP.");
       navigate("/verify-otp");
     } catch (e) {
-      setError(e.message || "Registration failed");
+      const errorMessage = e.message || "Registration failed. Please try again.";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
   }
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (canSubmit) {
+      onRegister();
+    } else {
+      if (password.length < 8) {
+        toast.warning("Password must be at least 8 characters long");
+      } else {
+        toast.warning("Please fill in all required fields");
+      }
+    }
+  };
 
   return (
     <div style={styles.container}>
       <div style={styles.card}>
         <h1>Create Account</h1>
 
-        <div style={styles.inputWrapper}>
-          <PersonIcon />
-          <TextField
+        <form onSubmit={handleSubmit}>
+          <div style={styles.inputWrapper}>
+            <PersonIcon />
+            <TextField
+              fullWidth
+              label="First Name"
+              type="text"
+              required
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              disabled={loading}
+            />
+          </div>
+
+          <div style={styles.inputWrapper}>
+            <PersonIcon />
+            <TextField
+              fullWidth
+              label="Last Name"
+              type="text"
+              required
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              disabled={loading}
+            />
+          </div>
+
+          <div style={styles.inputWrapper}>
+            <EmailIcon />
+            <TextField
+              fullWidth
+              label="Email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={loading}
+            />
+          </div>
+
+          <div style={styles.inputWrapper}>
+            <PhoneIcon />
+            <TextField
+              fullWidth
+              label="Phone Number"
+              type="tel"
+              required
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              inputProps={{ pattern: "[0-9]{10}", maxLength: 10 }}
+              helperText="Enter 10 digit mobile number"
+              disabled={loading}
+            />
+          </div>
+
+          <div style={styles.inputWrapper}>
+            <LockIcon />
+            <TextField
+              fullWidth
+              type="password"
+              label="Password (min 8 chars)"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={loading}
+            />
+          </div>
+
+          <Button
+            type="submit"
+            variant="contained"
             fullWidth
-            label="First Name"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-          />
-        </div>
-
-        <div style={styles.inputWrapper}>
-          <PersonIcon />
-          <TextField
-            fullWidth
-            label="Last Name"
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-          />
-        </div>
-
-        <div style={styles.inputWrapper}>
-          <EmailIcon />
-          <TextField
-            fullWidth
-            label="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </div>
-
-        <div style={styles.inputWrapper}>
-          <PhoneIcon />
-          <TextField
-            fullWidth
-            label="Phone Number"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-          />
-        </div>
-
-        <div style={styles.inputWrapper}>
-          <LockIcon />
-          <TextField
-            fullWidth
-            type="password"
-            label="Password (min 8 chars)"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </div>
-
-        {error ? <p style={styles.error}>{error}</p> : null}
-
-        <Button variant="contained" fullWidth disabled={!canSubmit} onClick={onRegister}>
-          {loading ? "Registering..." : "Register"}
-        </Button>
+            disabled={!canSubmit || loading}
+          >
+            {loading ? "Registering..." : "Register"}
+          </Button>
+        </form>
 
         <p style={styles.footer}>
           Already have an account?{" "}
@@ -153,12 +188,6 @@ const styles = {
     color: "#2563eb",
     cursor: "pointer",
     fontWeight: "500",
-  },
-  error: {
-    color: "#b91c1c",
-    marginTop: "0px",
-    marginBottom: "14px",
-    fontSize: "14px",
   },
 };
 

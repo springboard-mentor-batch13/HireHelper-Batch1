@@ -3,6 +3,7 @@ import EmailIcon from "@mui/icons-material/Email";
 import LockIcon from "@mui/icons-material/Lock";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import { api, setToken } from "../lib/api";
 
 const Login = () => {
@@ -10,7 +11,6 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
   const canSubmit = useMemo(() => {
     return email.trim() && password && !loading;
@@ -18,7 +18,6 @@ const Login = () => {
 
   async function onLogin() {
     try {
-      setError("");
       setLoading(true);
 
       const data = await api.post("/api/auth/login", {
@@ -28,25 +27,41 @@ const Login = () => {
 
       if (data?.requiresOtp) {
         sessionStorage.setItem("otp_email_id", email.trim());
+        toast.info("OTP verification required");
         navigate("/verify-otp");
         return;
       }
 
-      if (data?.token) setToken(data.token);
-      navigate("/dashboard");
+      if (data?.token) {
+        setToken(data.token);
+        localStorage.setItem("isLoggedIn", "true");
+        toast.success("Login successful!");
+        navigate("/dashboard", { replace: true });
+      }
     } catch (e) {
       // If backend returns requiresOtp via error (it currently returns 403 with JSON),
       // surface the message and allow user to navigate.
       if (e?.data?.requiresOtp) {
         sessionStorage.setItem("otp_email_id", email.trim());
+        toast.info("OTP verification required");
         navigate("/verify-otp");
         return;
       }
-      setError(e.message || "Login failed");
+      const errorMessage = e.message || "Login failed. Please check your credentials.";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
   }
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (canSubmit) {
+      onLogin();
+    } else {
+      toast.warning("Please fill in all required fields");
+    }
+  };
 
   return (
     <div style={styles.container}>
@@ -54,40 +69,45 @@ const Login = () => {
         <h1 style={styles.title}>HireHelper</h1>
         <p style={styles.subtitle}>Get help. Get things done.</p>
 
-        <div style={styles.inputWrapper}>
-          <EmailIcon style={styles.icon} />
-          <TextField
+        <form onSubmit={handleSubmit}>
+          <div style={styles.inputWrapper}>
+            <EmailIcon style={styles.icon} />
+            <TextField
+              fullWidth
+              label="Email"
+              type="email"
+              required
+              variant="outlined"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={loading}
+            />
+          </div>
+
+          <div style={styles.inputWrapper}>
+            <LockIcon style={styles.icon} />
+            <TextField
+              fullWidth
+              label="Password"
+              type="password"
+              required
+              variant="outlined"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={loading}
+            />
+          </div>
+
+          <Button
+            type="submit"
+            variant="contained"
             fullWidth
-            label="Email"
-            variant="outlined"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </div>
-
-        <div style={styles.inputWrapper}>
-          <LockIcon style={styles.icon} />
-          <TextField
-            fullWidth
-            label="Password"
-            type="password"
-            variant="outlined"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </div>
-
-        {error ? <p style={styles.error}>{error}</p> : null}
-
-        <Button
-          variant="contained"
-          fullWidth
-          style={styles.button}
-          disabled={!canSubmit}
-          onClick={onLogin}
-        >
-          {loading ? "Logging in..." : "Login"}
-        </Button>
+            style={styles.button}
+            disabled={!canSubmit || loading}
+          >
+            {loading ? "Logging in..." : "Login"}
+          </Button>
+        </form>
 
         <p style={styles.footer}>
           Don’t have an account?{" "}
@@ -116,13 +136,8 @@ const styles = {
     maxWidth: "400px",
     textAlign: "center",
   },
-  title: {
-    marginBottom: "5px",
-  },
-  subtitle: {
-    color: "#64748b",
-    marginBottom: "30px",
-  },
+  title: { marginBottom: "5px" },
+  subtitle: { color: "#64748b", marginBottom: "30px" },
   inputWrapper: {
     display: "flex",
     alignItems: "center",
@@ -144,12 +159,6 @@ const styles = {
     color: "#2563eb",
     cursor: "pointer",
     fontWeight: "500",
-  },
-  error: {
-    color: "#b91c1c",
-    marginTop: "0px",
-    marginBottom: "14px",
-    fontSize: "14px",
   },
 };
 

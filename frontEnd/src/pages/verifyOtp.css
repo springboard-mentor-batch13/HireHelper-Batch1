@@ -58,6 +58,12 @@
   box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
 }
 
+.otp-inputs input:disabled {
+  background-color: #f1f5f9;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 /* Button */
 .verify-btn {
   width: 100%;
@@ -72,8 +78,14 @@
   transition: background 0.2s ease;
 }
 
-.verify-btn:hover {
+.verify-btn:hover:not(:disabled) {
   background: #4338ca;
+}
+
+.verify-btn:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 /* Resend */

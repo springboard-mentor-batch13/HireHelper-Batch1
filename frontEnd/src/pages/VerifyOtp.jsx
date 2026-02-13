@@ -1,14 +1,14 @@
 import "./VerifyOtp.css";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import { api, setToken } from "../lib/api";
 
 const VerifyOtp = () => {
   const navigate = useNavigate();
   const [digits, setDigits] = useState(["", "", "", ""]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [info, setInfo] = useState("");
+  const inputRefs = useRef([]);
 
   const emailId = sessionStorage.getItem("otp_email_id") || "";
   const code = useMemo(() => digits.join(""), [digits]);
@@ -17,6 +17,13 @@ const VerifyOtp = () => {
     return emailId && code.length === 4 && !loading;
   }, [emailId, code, loading]);
 
+  // Auto-focus first input on mount
+  useEffect(() => {
+    if (inputRefs.current[0]) {
+      inputRefs.current[0].focus();
+    }
+  }, []);
+
   function setDigit(idx, val) {
     const cleaned = String(val || "").replace(/\D/g, "").slice(-1);
     setDigits((prev) => {
@@ -24,12 +31,53 @@ const VerifyOtp = () => {
       next[idx] = cleaned;
       return next;
     });
+
+    // Auto-advance to next input if digit entered
+    if (cleaned && idx < 3) {
+      setTimeout(() => {
+        inputRefs.current[idx + 1]?.focus();
+      }, 0);
+    }
+  }
+
+  function handleKeyDown(idx, e) {
+    // Handle backspace
+    if (e.key === "Backspace" && !digits[idx] && idx > 0) {
+      inputRefs.current[idx - 1]?.focus();
+      setDigits((prev) => {
+        const next = [...prev];
+        next[idx - 1] = "";
+        return next;
+      });
+    }
+    // Handle arrow keys
+    else if (e.key === "ArrowLeft" && idx > 0) {
+      inputRefs.current[idx - 1]?.focus();
+    } else if (e.key === "ArrowRight" && idx < 3) {
+      inputRefs.current[idx + 1]?.focus();
+    }
+  }
+
+  function handlePaste(e) {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 4);
+    if (pastedData.length > 0) {
+      const newDigits = ["", "", "", ""];
+      for (let i = 0; i < Math.min(pastedData.length, 4); i++) {
+        newDigits[i] = pastedData[i];
+      }
+      setDigits(newDigits);
+      // Focus the next empty input or the last one
+      const nextEmptyIdx = newDigits.findIndex((d) => !d);
+      const focusIdx = nextEmptyIdx === -1 ? 3 : nextEmptyIdx;
+      setTimeout(() => {
+        inputRefs.current[focusIdx]?.focus();
+      }, 0);
+    }
   }
 
   async function onVerify() {
     try {
-      setError("");
-      setInfo("");
       setLoading(true);
 
       const data = await api.post("/api/auth/otp/verify", {
@@ -37,10 +85,20 @@ const VerifyOtp = () => {
         code,
       });
 
-      if (data?.token) setToken(data.token);
-      navigate("/dashboard");
+      if (data?.token) {
+        setToken(data.token);
+        localStorage.setItem("isLoggedIn", "true");
+        toast.success("OTP verified successfully!");
+        navigate("/dashboard", { replace: true });
+      }
     } catch (e) {
-      setError(e.message || "OTP verification failed");
+      const errorMessage = e.message || "OTP verification failed. Please check your code.";
+      toast.error(errorMessage);
+      // Clear digits and focus first input on error
+      setDigits(["", "", "", ""]);
+      setTimeout(() => {
+        inputRefs.current[0]?.focus();
+      }, 0);
     } finally {
       setLoading(false);
     }
@@ -48,17 +106,23 @@ const VerifyOtp = () => {
 
   async function onResend() {
     try {
-      setError("");
-      setInfo("");
       if (!emailId) {
-        setError("Missing email. Please register/login again.");
+        const errorMsg = "Missing email. Please register/login again.";
+        toast.error(errorMsg);
         return;
       }
       setLoading(true);
       await api.post("/api/auth/otp/send", { email_id: emailId });
-      setInfo("OTP resent.");
+      const successMsg = "OTP resent successfully!";
+      toast.success(successMsg);
+      // Clear digits and focus first input
+      setDigits(["", "", "", ""]);
+      setTimeout(() => {
+        inputRefs.current[0]?.focus();
+      }, 0);
     } catch (e) {
-      setError(e.message || "Failed to resend OTP");
+      const errorMessage = e.message || "Failed to resend OTP";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -78,19 +142,20 @@ const VerifyOtp = () => {
           {digits.map((d, idx) => (
             <input
               key={idx}
+              ref={(el) => (inputRefs.current[idx] = el)}
               type="text"
               inputMode="numeric"
               maxLength="1"
               value={d}
               onChange={(e) => setDigit(idx, e.target.value)}
+              onKeyDown={(e) => handleKeyDown(idx, e)}
+              onPaste={idx === 0 ? handlePaste : undefined}
+              disabled={loading}
             />
           ))}
         </div>
 
-        {error ? <p style={{ color: "#b91c1c", marginTop: "10px" }}>{error}</p> : null}
-        {info ? <p style={{ color: "#166534", marginTop: "10px" }}>{info}</p> : null}
-
-        <button className="verify-btn" disabled={!canSubmit} onClick={onVerify}>
+        <button className="verify-btn" disabled={!canSubmit || loading} onClick={onVerify}>
           {loading ? "Verifying..." : "Verify & Continue"}
         </button>
 
