@@ -8,8 +8,13 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { api } from "../lib/api";
 
+// ✅ Password validation regex
+const passwordRegex =
+    /^(?=.*[A-Z])(?=.*[a-z])(?=.*[^A-Za-z0-9]).{8,}$/;
+    
 const Register = () => {
   const navigate = useNavigate();
+
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -17,13 +22,16 @@ const Register = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  
+
+  // ✅ Enable button only if all validations pass
   const canSubmit = useMemo(() => {
     return (
       firstName.trim() &&
       lastName.trim() &&
       email.trim() &&
       phone.trim() &&
-      password.length >= 8 &&
+      passwordRegex.test(password) &&
       !loading
     );
   }, [firstName, lastName, email, phone, password, loading]);
@@ -41,11 +49,16 @@ const Register = () => {
         profile_picture: "",
       });
 
-      sessionStorage.setItem("otp_email_id", data?.user?.email_id || email.trim());
+      sessionStorage.setItem(
+        "otp_email_id",
+        data?.user?.email_id || email.trim()
+      );
+
       toast.success("Registration successful! Please verify your OTP.");
       navigate("/verify-otp");
     } catch (e) {
-      const errorMessage = e.message || "Registration failed. Please try again.";
+      const errorMessage =
+        e.message || "Registration failed. Please try again.";
       toast.error(errorMessage);
     } finally {
       setLoading(false);
@@ -54,15 +67,20 @@ const Register = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (canSubmit) {
-      onRegister();
-    } else {
-      if (password.length < 8) {
-        toast.warning("Password must be at least 8 characters long");
-      } else {
-        toast.warning("Please fill in all required fields");
-      }
+
+    if (!firstName || !lastName || !email || !phone || !password) {
+      toast.warning("Please fill in all required fields");
+      return;
     }
+
+    if (!passwordRegex.test(password)) {
+      toast.warning(
+        "Password must contain at least 8 characters, one uppercase letter, one lowercase letter, and one special character."
+      );
+      return;
+    }
+
+    onRegister();
   };
 
   return (
@@ -130,11 +148,12 @@ const Register = () => {
             <TextField
               fullWidth
               type="password"
-              label="Password (min 8 chars)"
+              label="Password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
+              helperText="Must contain 1 uppercase, 1 lowercase & 1 special character"
             />
           </div>
 
