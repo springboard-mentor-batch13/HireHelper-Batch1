@@ -6,6 +6,8 @@ import Register from "../pages/Register";
 import VerifyOtp from "../pages/VerifyOtp";
 import Dashboard from "../pages/Dashboard";
 import Feed from "../pages/Feed";
+import AddTask from "../pages/AddTasks";
+import MyTasks from "../pages/MyTasks";
 import AppLayout from "../layouts/AppLayout";
  
 const AppRoutes = () => {
@@ -60,6 +62,8 @@ const AppRoutes = () => {
       >
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/feed" element={<Feed />} />
+        <Route path="/add-task" element={<AddTask />} />
+        <Route path="/my-tasks" element={<MyTasks />} />
       </Route>
  
       <Route path="*" element={<Navigate to="/" />} />

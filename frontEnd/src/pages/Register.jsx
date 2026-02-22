@@ -8,10 +8,8 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { api } from "../lib/api";
 
-// ✅ Password validation regex
-const passwordRegex =
-    /^(?=.*[A-Z])(?=.*[a-z])(?=.*[^A-Za-z0-9]).{8,}$/;
-    
+const passwordRegex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*[^A-Za-z0-9]).{8,}$/;
+
 const Register = () => {
   const navigate = useNavigate();
 
@@ -22,9 +20,6 @@ const Register = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  
-
-  // ✅ Enable button only if all validations pass
   const canSubmit = useMemo(() => {
     return (
       firstName.trim() &&
@@ -86,91 +81,106 @@ const Register = () => {
   return (
     <div style={styles.container}>
       <div style={styles.card}>
-        <h1>Create Account</h1>
+        <div style={styles.logoMark}>H</div>
+        <h1 style={styles.title}>Create Account</h1>
+        <p style={styles.subtitle}>Join HireHelper and start getting things done</p>
 
         <form onSubmit={handleSubmit}>
-          <div style={styles.inputWrapper}>
-            <PersonIcon />
+          <div style={styles.nameRow}>
             <TextField
               fullWidth
               label="First Name"
-              type="text"
               required
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               disabled={loading}
+              slotProps={{
+                input: {
+                  startAdornment: <PersonIcon sx={{ color: "#94a3b8", mr: 1 }} />,
+                },
+              }}
             />
-          </div>
-
-          <div style={styles.inputWrapper}>
-            <PersonIcon />
             <TextField
               fullWidth
               label="Last Name"
-              type="text"
               required
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               disabled={loading}
+              slotProps={{
+                input: {
+                  startAdornment: <PersonIcon sx={{ color: "#94a3b8", mr: 1 }} />,
+                },
+              }}
             />
           </div>
 
-          <div style={styles.inputWrapper}>
-            <EmailIcon />
-            <TextField
-              fullWidth
-              label="Email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={loading}
-            />
-          </div>
+          <TextField
+            fullWidth
+            label="Email"
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={loading}
+            slotProps={{
+              input: {
+                startAdornment: <EmailIcon sx={{ color: "#94a3b8", mr: 1 }} />,
+              },
+            }}
+            sx={{ mb: 2.5 }}
+          />
 
-          <div style={styles.inputWrapper}>
-            <PhoneIcon />
-            <TextField
-              fullWidth
-              label="Phone Number"
-              type="tel"
-              required
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              inputProps={{ pattern: "[0-9]{10}", maxLength: 10 }}
-              helperText="Enter 10 digit mobile number"
-              disabled={loading}
-            />
-          </div>
+          <TextField
+            fullWidth
+            label="Phone Number"
+            type="tel"
+            required
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            inputProps={{ pattern: "[0-9]{10}", maxLength: 10 }}
+            helperText="Enter 10 digit mobile number"
+            disabled={loading}
+            slotProps={{
+              input: {
+                startAdornment: <PhoneIcon sx={{ color: "#94a3b8", mr: 1 }} />,
+              },
+            }}
+            sx={{ mb: 2.5 }}
+          />
 
-          <div style={styles.inputWrapper}>
-            <LockIcon />
-            <TextField
-              fullWidth
-              type="password"
-              label="Password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={loading}
-              helperText="Must contain 1 uppercase, 1 lowercase & 1 special character"
-            />
-          </div>
+          <TextField
+            fullWidth
+            type="password"
+            label="Password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={loading}
+            helperText="Min 8 chars, 1 uppercase, 1 lowercase & 1 special character"
+            slotProps={{
+              input: {
+                startAdornment: <LockIcon sx={{ color: "#94a3b8", mr: 1 }} />,
+              },
+            }}
+            sx={{ mb: 1 }}
+          />
 
           <Button
             type="submit"
             variant="contained"
             fullWidth
             disabled={!canSubmit || loading}
+            sx={styles.button}
           >
-            {loading ? "Registering..." : "Register"}
+            {loading ? "Creating Account..." : "Create Account"}
           </Button>
         </form>
 
         <p style={styles.footer}>
           Already have an account?{" "}
           <span style={styles.link} onClick={() => navigate("/login")}>
-            Login
+            Sign in
           </span>
         </p>
       </div>
@@ -181,32 +191,67 @@ const Register = () => {
 const styles = {
   container: {
     minHeight: "100vh",
-    background: "#020617",
+    background: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
+    padding: "20px",
   },
   card: {
     background: "#ffffff",
-    padding: "40px",
-    borderRadius: "10px",
+    padding: "48px 40px 40px",
+    borderRadius: "16px",
     width: "100%",
-    maxWidth: "420px",
+    maxWidth: "540px",
+    textAlign: "center",
+    boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
   },
-  inputWrapper: {
+  logoMark: {
+    width: "56px",
+    height: "56px",
+    borderRadius: "14px",
+    background: "#1976d2",
+    color: "#fff",
+    fontSize: "28px",
+    fontWeight: "800",
     display: "flex",
     alignItems: "center",
-    gap: "10px",
+    justifyContent: "center",
+    margin: "0 auto 20px",
+  },
+  title: {
+    fontSize: "24px",
+    fontWeight: "700",
+    color: "#0f172a",
+    margin: "0 0 6px",
+  },
+  subtitle: {
+    color: "#64748b",
+    fontSize: "14px",
+    margin: "0 0 32px",
+  },
+  nameRow: {
+    display: "flex",
+    gap: "12px",
     marginBottom: "20px",
   },
+  button: {
+    marginTop: "16px",
+    padding: "12px",
+    fontWeight: 600,
+    fontSize: "15px",
+    textTransform: "none",
+    borderRadius: "10px",
+  },
   footer: {
-    marginTop: "20px",
+    marginTop: "24px",
     fontSize: "14px",
+    color: "#64748b",
   },
   link: {
     color: "#2563eb",
     cursor: "pointer",
-    fontWeight: "500",
+    fontWeight: "600",
   },
 };
 

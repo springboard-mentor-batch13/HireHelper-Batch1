@@ -5,6 +5,7 @@ import FeedIcon from "@mui/icons-material/DynamicFeed";
 import TaskIcon from "@mui/icons-material/Task";
 import AddIcon from "@mui/icons-material/AddBox";
 import SettingsIcon from "@mui/icons-material/Settings";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { api, setToken } from "../lib/api";
 import "./Sidebar.css";
@@ -14,17 +15,12 @@ const Sidebar = () => {
 
   const handleLogout = async () => {
     try {
-      // Call logout API
       await api.post("/api/auth/logout");
-      
-      // Clear local storage
       setToken(null);
       localStorage.removeItem("isLoggedIn");
-      
       toast.success("Logged out successfully");
       navigate("/login", { replace: true });
     } catch (e) {
-      // Even if API call fails, clear local storage and logout
       setToken(null);
       localStorage.removeItem("isLoggedIn");
       toast.error(e.message || "Logout failed, but you've been logged out locally");
@@ -34,9 +30,7 @@ const Sidebar = () => {
 
   return (
     <aside className="sidebar">
-      <div className="sidebar-logo">
-        HireHelper
-      </div>
+      <div className="sidebar-logo">HireHelper</div>
 
       <nav className="sidebar-menu">
         <NavLink to="/dashboard" className="menu-item">
@@ -49,26 +43,30 @@ const Sidebar = () => {
           <span>Feed</span>
         </NavLink>
 
-        <NavLink to="#" className="menu-item">
+        <NavLink to="/my-tasks" className="menu-item">
           <TaskIcon />
           <span>My Tasks</span>
         </NavLink>
 
-        <NavLink to="#" className="menu-item">
+        <NavLink to="/add-task" className="menu-item">
           <AddIcon />
           <span>Add Task</span>
         </NavLink>
 
-        <NavLink to="#" className="menu-item">
+        <NavLink to="/settings" className="menu-item">
           <SettingsIcon />
           <span>Settings</span>
         </NavLink>
       </nav>
 
-      {/* Logout Section */}
-      <div className="menu-item logout" onClick={handleLogout}>
-        <LogoutIcon />
-        <span>Logout</span>
+      <div className="sidebar-bottom">
+        <NavLink to="/profile" className="profile-link">
+          <AccountCircleIcon />
+          <span>Profile</span>
+        </NavLink>
+        <div className="logout-btn" onClick={handleLogout}>
+          <LogoutIcon />
+        </div>
       </div>
     </aside>
   );
