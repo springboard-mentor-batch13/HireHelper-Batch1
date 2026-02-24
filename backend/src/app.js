@@ -9,19 +9,12 @@ function createApp() {
   const app = express();
 
   const corsOrigin = process.env.CORS_ORIGIN || "http://localhost:5173";
-  app.use(
-    cors({
-      origin: corsOrigin,
-      credentials: true,
-    })
-  );
+  app.use(cors({ origin: corsOrigin, credentials: true }));
 
   app.use(express.json({ limit: "1mb" }));
   app.use(cookieParser());
 
-  app.get("/health", (req, res) => {
-    res.json({ ok: true });
-  });
+  app.get("/health", (req, res) => res.json({ ok: true }));
 
   app.use("/api/auth", authRouter);
 
@@ -32,4 +25,3 @@ function createApp() {
 }
 
 module.exports = { createApp };
-

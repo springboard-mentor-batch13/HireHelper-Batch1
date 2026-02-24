@@ -43,6 +43,7 @@ const Register = () => {
         password,
         profile_picture: "",
       });
+      if (data?.user) { localStorage.setItem("user", JSON.stringify(data.user)); }
 
       sessionStorage.setItem(
         "otp_email_id",
