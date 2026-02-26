@@ -9,10 +9,22 @@ import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { api, setToken } from "../lib/api";
 import "./Sidebar.css";
+import { useEffect, useState } from "react";
+
+
 
 const Sidebar = () => {
+  const [user, setUser] = useState({});
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+
+  const initial = user.first_name ? user.first_name.charAt(0).toUpperCase() : "👤";
   const handleLogout = async () => {
     try {
       await api.post("/api/auth/logout");
@@ -60,10 +72,33 @@ const Sidebar = () => {
       </nav>
 
       <div className="sidebar-bottom">
-        <NavLink to="/profile" className="profile-link">
-          <AccountCircleIcon />
-          <span>Profile</span>
-        </NavLink>
+       <NavLink to="/profile" className="profile-link">
+  {user.profile_picture ? (
+    <img src={user.profile_picture} alt="Profile" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
+  ) : (
+    <div style={{
+      width: "32px",
+      height: "32px",
+      borderRadius: "50%",
+      background: "#2563eb",
+      color: "#fff",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontWeight: "600"
+    }}>
+      {initial}
+    </div>
+  )}
+  <div>
+    <div style={{ fontSize: "14px", fontWeight: "600" }}>
+      {user.first_name} {user.last_name}
+    </div>
+    <div style={{ fontSize: "12px", color: "#cbd5f5" }}>
+      {user.email_id}
+    </div>
+  </div>
+</NavLink>
         <div className="logout-btn" onClick={handleLogout}>
           <LogoutIcon />
         </div>

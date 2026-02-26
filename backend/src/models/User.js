@@ -4,7 +4,6 @@ const crypto = require("crypto");
 
 const UserSchema = new mongoose.Schema(
   {
-    
     id: {
       type: String,
       default: () => crypto.randomUUID(),
@@ -27,13 +26,10 @@ const UserSchema = new mongoose.Schema(
       index: true,
     },
 
-    
     password: { type: String, required: true, select: false },
 
-    
     profile_picture: { type: String, default: "" },
 
-    
     is_email_verified: { type: Boolean, default: false },
     otp_code_hash: { type: String, default: "", select: false },
     otp_expires_at: { type: Date, default: null },
@@ -43,18 +39,16 @@ const UserSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-UserSchema.pre("save", async function hashPassword() {
-  
+UserSchema.pre("save", async function () {
   if (!this.isModified("password")) return;
-  const saltRounds = 12;
-  this.password = await bcrypt.hash(this.password, saltRounds);
+  this.password = await bcrypt.hash(this.password, 12);
 });
 
-UserSchema.methods.comparePassword = async function comparePassword(plain) {
+UserSchema.methods.comparePassword = async function (plain) {
   return bcrypt.compare(plain, this.password);
 };
 
-UserSchema.methods.toSafeJSON = function toSafeJSON() {
+UserSchema.methods.toSafeJSON = function () {
   return {
     id: this.id,
     first_name: this.first_name,
@@ -69,6 +63,4 @@ UserSchema.methods.toSafeJSON = function toSafeJSON() {
 };
 
 const User = mongoose.model("User", UserSchema);
-
 module.exports = { User };
-

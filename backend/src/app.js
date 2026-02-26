@@ -4,7 +4,7 @@ const cookieParser = require("cookie-parser");
 const path = require("path");
 
 const { authRouter } = require("./routes/auth.routes");
-const taskRouter  = require("./routes/task.routes");
+const taskRouter = require("./routes/task.routes");
 const { notFoundHandler, errorHandler } = require("./middleware/errors");
 
 function createApp() {
@@ -12,6 +12,7 @@ function createApp() {
 
   const corsOrigin = process.env.CORS_ORIGIN || "http://localhost:5173";
 
+  // CORS middleware
   app.use(
     cors({
       origin: corsOrigin,
@@ -19,17 +20,17 @@ function createApp() {
     })
   );
 
-  
   app.use(express.json({ limit: "1mb" }));
   app.use(express.urlencoded({ extended: true }));
 
   app.use(cookieParser());
 
+  // Uploads folder
   app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
 
+  // Health check endpoint
   app.get("/health", (req, res) => res.json({ ok: true }));
 
-  
   app.use("/api/auth", authRouter);
   app.use("/api/tasks", taskRouter);
 

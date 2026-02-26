@@ -55,13 +55,16 @@
   margin-top: auto;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
   padding-top: 16px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .profile-link {
-  flex: 1;
+ flex: 0 1 auto;
+  min-width: 0;
+  max-width: calc(100% - 30px);
+  overflow: hidden;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -72,6 +75,13 @@
   font-size: 14px;
   transition: all 0.25s ease;
 }
+
+.profile-link div {
+  white-space: nowrap; 
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
 
 .profile-link svg {
   font-size: 28px;

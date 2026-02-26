@@ -35,6 +35,7 @@ const Login = () => {
       if (data?.token) {
         setToken(data.token);
         localStorage.setItem("isLoggedIn", "true");
+        localStorage.setItem("user", JSON.stringify(data.user));
         toast.success("Login successful!");
         navigate("/dashboard", { replace: true });
       }

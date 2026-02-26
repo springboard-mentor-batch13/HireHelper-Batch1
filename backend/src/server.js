@@ -8,12 +8,9 @@ const { createApp } = require("./app");
 const { connectDb } = require("./config/db");
 
 async function main() {
-  
   await connectDb(process.env.MONGO_URI);
 
-  
   const app = createApp();
-
 
   app.use("/uploads", require("express").static(path.join(__dirname, "..", "uploads")));
 
