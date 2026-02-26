@@ -4,7 +4,7 @@ const crypto = require("crypto");
 
 const UserSchema = new mongoose.Schema(
   {
-    // Unique UUID of the user
+    
     id: {
       type: String,
       default: () => crypto.randomUUID(),
@@ -27,13 +27,13 @@ const UserSchema = new mongoose.Schema(
       index: true,
     },
 
-    // Encrypted (hashed) password
+    
     password: { type: String, required: true, select: false },
 
-    // URL or file path to profile image
+    
     profile_picture: { type: String, default: "" },
 
-    // OTP verification (for later)
+    
     is_email_verified: { type: Boolean, default: false },
     otp_code_hash: { type: String, default: "", select: false },
     otp_expires_at: { type: Date, default: null },
@@ -44,7 +44,7 @@ const UserSchema = new mongoose.Schema(
 );
 
 UserSchema.pre("save", async function hashPassword() {
-  // In Mongoose v9, async hooks should not use `next()`.
+  
   if (!this.isModified("password")) return;
   const saltRounds = 12;
   this.password = await bcrypt.hash(this.password, saltRounds);

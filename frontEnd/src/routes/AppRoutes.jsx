@@ -8,67 +8,58 @@ import Dashboard from "../pages/Dashboard";
 import Feed from "../pages/Feed";
 import AddTask from "../pages/AddTasks";
 import MyTasks from "../pages/MyTasks";
+import TaskDetail from "../pages/TaskDetail";
 import AppLayout from "../layouts/AppLayout";
- 
+
 const AppRoutes = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     return localStorage.getItem("isLoggedIn") === "true";
   });
- 
+
   useEffect(() => {
     const checkAuth = () => {
       setIsLoggedIn(localStorage.getItem("isLoggedIn") === "true");
     };
- 
-    // Check auth state periodically
+
     const interval = setInterval(checkAuth, 100);
-   
-    // Also listen to storage events
     window.addEventListener("storage", checkAuth);
- 
+
     return () => {
       clearInterval(interval);
       window.removeEventListener("storage", checkAuth);
     };
   }, []);
- 
+
   return (
     <Routes>
       <Route
         path="/"
-        element={
-          isLoggedIn ? <Navigate to="/dashboard" /> : <Landing />
-        }
+        element={isLoggedIn ? <Navigate to="/dashboard" /> : <Landing />}
       />
- 
+
       <Route
         path="/login"
-        element={
-          isLoggedIn ? <Navigate to="/dashboard" /> : <Login />
-        }
+        element={isLoggedIn ? <Navigate to="/dashboard" /> : <Login />}
       />
       <Route
         path="/register"
-        element={
-          isLoggedIn ? <Navigate to="/dashboard" /> : <Register />
-        }
+        element={isLoggedIn ? <Navigate to="/dashboard" /> : <Register />}
       />
       <Route path="/verify-otp" element={<VerifyOtp />} />
- 
+
       <Route
-        element={
-          isLoggedIn ? <AppLayout /> : <Navigate to="/login" />
-        }
+        element={isLoggedIn ? <AppLayout /> : <Navigate to="/login" />}
       >
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/feed" element={<Feed />} />
         <Route path="/add-task" element={<AddTask />} />
         <Route path="/my-tasks" element={<MyTasks />} />
+        <Route path="/task/:id" element={<TaskDetail />} />
       </Route>
- 
+
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );
 };
- 
+
 export default AppRoutes;

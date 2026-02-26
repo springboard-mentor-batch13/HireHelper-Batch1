@@ -33,8 +33,10 @@ const MyTasks = () => {
   useEffect(() => {
     async function fetchTasks() {
       try {
-        const data = await api.get("/api/tasks/mine");
-        setTasks(data.tasks || []);
+      
+        const response = await api.get("/api/tasks/mine");
+
+        setTasks(response.data || []);
       } catch (err) {
         toast.error(err.message || "Failed to load tasks");
       } finally {
@@ -83,7 +85,7 @@ const MyTasks = () => {
 
       <div className="tasks-grid">
         {tasks.map((task) => (
-          <div className="task-card" key={task.id}>
+          <div className="task-card" key={task._id}>
             {task.picture && (
               <img
                 src={`${API_BASE_URL}${task.picture}`}
@@ -91,14 +93,22 @@ const MyTasks = () => {
                 className="task-card-image"
               />
             )}
+
             <div className="task-card-body">
               <div className="task-card-top">
                 <h3 className="task-card-title">{task.title}</h3>
+
                 <Chip
-                  label={task.status.replace("_", " ")}
-                  color={statusColors[task.status] || "default"}
+                  label={(task.status || "open").replace("_", " ")}
+                  color={statusColors[task.status] || "success"}
                   size="small"
-                  sx={{ textTransform: "capitalize", fontWeight: 500, fontSize: 11 }}
+                  onClick={() => navigate(`/task/${task._id}`)}
+                  sx={{
+                    textTransform: "capitalize",
+                    fontWeight: 500,
+                    fontSize: 11,
+                    cursor: "pointer",
+                  }}
                 />
               </div>
 
@@ -107,18 +117,18 @@ const MyTasks = () => {
               )}
 
               <div className="task-card-meta">
-                <LocationOnIcon />
+                <LocationOnIcon fontSize="small" />
                 {task.location}
               </div>
 
               <div className="task-card-meta">
-                <AccessTimeIcon />
-                {formatDate(task.start_time)}
-                {task.end_time && ` — ${formatDate(task.end_time)}`}
+                <AccessTimeIcon fontSize="small" />
+                {formatDate(task.starttime)}
+                {task.endtime && ` — ${formatDate(task.endtime)}`}
               </div>
 
               <div className="task-card-footer">
-                <PeopleIcon />
+                <PeopleIcon fontSize="small" />
                 {task.requests?.length || 0} request
                 {(task.requests?.length || 0) !== 1 ? "s" : ""}
               </div>

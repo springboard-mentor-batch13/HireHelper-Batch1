@@ -17,7 +17,7 @@ const VerifyOtp = () => {
     return emailId && code.length === 4 && !loading;
   }, [emailId, code, loading]);
 
-  // Auto-focus first input on mount
+
   useEffect(() => {
     if (inputRefs.current[0]) {
       inputRefs.current[0].focus();
@@ -32,7 +32,7 @@ const VerifyOtp = () => {
       return next;
     });
 
-    // Auto-advance to next input if digit entered
+    
     if (cleaned && idx < 3) {
       setTimeout(() => {
         inputRefs.current[idx + 1]?.focus();
@@ -41,7 +41,7 @@ const VerifyOtp = () => {
   }
 
   function handleKeyDown(idx, e) {
-    // Handle backspace
+    
     if (e.key === "Backspace" && !digits[idx] && idx > 0) {
       inputRefs.current[idx - 1]?.focus();
       setDigits((prev) => {
@@ -50,7 +50,7 @@ const VerifyOtp = () => {
         return next;
       });
     }
-    // Handle arrow keys
+    
     else if (e.key === "ArrowLeft" && idx > 0) {
       inputRefs.current[idx - 1]?.focus();
     } else if (e.key === "ArrowRight" && idx < 3) {
@@ -67,7 +67,7 @@ const VerifyOtp = () => {
         newDigits[i] = pastedData[i];
       }
       setDigits(newDigits);
-      // Focus the next empty input or the last one
+      
       const nextEmptyIdx = newDigits.findIndex((d) => !d);
       const focusIdx = nextEmptyIdx === -1 ? 3 : nextEmptyIdx;
       setTimeout(() => {
@@ -94,7 +94,7 @@ const VerifyOtp = () => {
     } catch (e) {
       const errorMessage = e.message || "OTP verification failed. Please check your code.";
       toast.error(errorMessage);
-      // Clear digits and focus first input on error
+      
       setDigits(["", "", "", ""]);
       setTimeout(() => {
         inputRefs.current[0]?.focus();
@@ -115,7 +115,7 @@ const VerifyOtp = () => {
       await api.post("/api/auth/otp/send", { email_id: emailId });
       const successMsg = "OTP resent successfully!";
       toast.success(successMsg);
-      // Clear digits and focus first input
+      
       setDigits(["", "", "", ""]);
       setTimeout(() => {
         inputRefs.current[0]?.focus();

@@ -30,10 +30,12 @@ const AddTask = () => {
   function handlePictureChange(e) {
     const file = e.target.files?.[0];
     if (!file) return;
+
     if (file.size > 5 * 1024 * 1024) {
       toast.warning("Image must be under 5 MB");
       return;
     }
+
     setPicture(file);
     setPreview(URL.createObjectURL(file));
   }
@@ -46,25 +48,35 @@ const AddTask = () => {
 
   async function handleSubmit(e) {
     e.preventDefault();
+
     if (!canSubmit) {
       toast.warning("Please fill in all required fields");
       return;
     }
+
     try {
       setLoading(true);
+
       const formData = new FormData();
       formData.append("title", title.trim());
       formData.append("description", description.trim());
       formData.append("location", location.trim());
       formData.append("start_time", new Date(startTime).toISOString());
-      if (endTime) formData.append("end_time", new Date(endTime).toISOString());
-      if (picture) formData.append("picture", picture);
+      if (endTime) {
+        formData.append("end_time", endTime);}
 
+      if (picture) {
+        formData.append("picture", picture);
+      }
+
+    
       await api.upload("/api/tasks", formData);
+
       toast.success("Task created successfully!");
       navigate("/my-tasks");
     } catch (err) {
-      toast.error(err.message || "Failed to create task");
+      console.error("TASK CREATE ERROR:", err);
+      toast.error(err.response?.data?.message || "Failed to create task");
     } finally {
       setLoading(false);
     }
@@ -79,7 +91,7 @@ const AddTask = () => {
 
       <div className="add-task-card">
         <form onSubmit={handleSubmit}>
-          {/* Details section */}
+          {/* Details */}
           <div className="form-section">
             <div className="form-section-label">
               <InfoOutlinedIcon /> Details
@@ -92,7 +104,6 @@ const AddTask = () => {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 disabled={loading}
-                placeholder="e.g. Help with groceries"
               />
               <TextField
                 fullWidth
@@ -102,12 +113,11 @@ const AddTask = () => {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 disabled={loading}
-                placeholder="Describe what you need help with..."
               />
             </div>
           </div>
 
-          {/* Location section */}
+          {/* Location */}
           <div className="form-section">
             <div className="form-section-label">
               <LocationOnIcon /> Location
@@ -119,11 +129,10 @@ const AddTask = () => {
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               disabled={loading}
-              placeholder="e.g. Sector 18, Noida"
             />
           </div>
 
-          {/* Schedule section */}
+          {/* Schedule */}
           <div className="form-section">
             <div className="form-section-label">
               <AccessTimeIcon /> Schedule
@@ -136,7 +145,7 @@ const AddTask = () => {
                 required
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                slotProps={{ inputLabel: { shrink: true } }}
+                InputLabelProps={{ shrink: true }}
                 disabled={loading}
               />
               <TextField
@@ -145,13 +154,13 @@ const AddTask = () => {
                 type="datetime-local"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
-                slotProps={{ inputLabel: { shrink: true } }}
+                InputLabelProps={{ shrink: true }}
                 disabled={loading}
               />
             </div>
           </div>
 
-          {/* Picture section */}
+          {/* Picture */}
           <div className="form-section">
             <div className="form-section-label">
               <CloudUploadIcon /> Picture
@@ -175,7 +184,6 @@ const AddTask = () => {
                   <p>
                     <span>Click to upload</span> an image
                   </p>
-                  <p className="upload-hint">JPEG, PNG, GIF or WebP (max 5 MB)</p>
                 </div>
               ) : (
                 <div className="preview-wrapper">
@@ -188,14 +196,13 @@ const AddTask = () => {
                       removePicture();
                     }}
                   >
-                    &times;
+                    ×
                   </button>
                 </div>
               )}
             </div>
-            {picture && (
-              <p className="preview-filename">{picture.name}</p>
-            )}
+
+            {picture && <p className="preview-filename">{picture.name}</p>}
           </div>
 
           <Button
