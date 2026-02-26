@@ -1,7 +1,16 @@
 const mongoose = require("mongoose");
+const crypto = require("crypto");
 
 const taskSchema = new mongoose.Schema(
   {
+    id: {
+      type: String,
+      default: () => crypto.randomUUID(),
+      unique: true,
+      index: true,
+      immutable: true,
+    },
+
     title: {
       type: String,
       required: true,
@@ -22,8 +31,7 @@ const taskSchema = new mongoose.Schema(
     endTime: {
       type: Date,
     },
-    
-    
+
     picture: {
       type: String,
       default: null,

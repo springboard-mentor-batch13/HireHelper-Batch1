@@ -1,7 +1,6 @@
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-const path = require("path");
 
 const { authRouter } = require("./routes/auth.routes");
 const taskRouter = require("./routes/task.routes");
@@ -24,9 +23,6 @@ function createApp() {
   app.use(express.urlencoded({ extended: true }));
 
   app.use(cookieParser());
-
-  // Uploads folder
-  app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
 
   // Health check endpoint
   app.get("/health", (req, res) => res.json({ ok: true }));

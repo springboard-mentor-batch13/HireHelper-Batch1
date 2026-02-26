@@ -12,13 +12,10 @@ async function main() {
 
   const app = createApp();
 
-  app.use("/uploads", require("express").static(path.join(__dirname, "..", "uploads")));
-
   const port = Number(process.env.PORT || 5000);
 
   app.listen(port, () => {
     console.log(`Backend listening on http://localhost:${port}`);
-    console.log("Uploads available at: http://localhost:" + port + "/uploads/<filename>");
   });
 }
 

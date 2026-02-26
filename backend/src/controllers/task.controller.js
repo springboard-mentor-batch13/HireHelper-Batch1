@@ -1,4 +1,22 @@
 const { Task } = require("../models/Task");
+const { cloudinary } = require("../config/cloudinary");
+
+async function uploadToCloudinary(file) {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: process.env.CLOUDINARY_FOLDER || "hirehelper/tasks",
+        resource_type: "image",
+      },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      }
+    );
+
+    stream.end(file.buffer);
+  });
+}
 
 
 async function createTask(req, res) {
@@ -24,26 +42,23 @@ async function createTask(req, res) {
       });
     }
 
-    
     const finalEndTime = end_time && end_time.trim() !== "" ? end_time : null;
 
-    
-    let picturePath = null;
+    let pictureUrl = null;
     if (req.file) {
-      picturePath = "/uploads/" + req.file.filename;
+      const uploaded = await uploadToCloudinary(req.file);
+      pictureUrl = uploaded.secure_url || uploaded.url;
     }
 
-    
     const task = await Task.create({
       title,
       description,
       location,
 
-    
       startTime: start_time,
       endTime: finalEndTime,
 
-      picture: picturePath,
+      picture: pictureUrl,
       createdBy: req.user?.id,
     });
 
