@@ -25,6 +25,16 @@ const statusColors = {
   cancelled: "default",
 };
 
+function getGradientClass(task) {
+  const key = task._id || task.title || "";
+  let hash = 0;
+  for (let i = 0; i < key.length; i += 1) {
+    hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
+  }
+  const idx = (hash % 4) + 1;
+  return `gradient-${idx}`;
+}
+
 const MyTasks = () => {
   const navigate = useNavigate();
   const [tasks, setTasks] = useState([]);
@@ -86,12 +96,18 @@ const MyTasks = () => {
       <div className="tasks-grid">
         {tasks.map((task) => (
           <div className="task-card" key={task._id}>
-            {task.picture && (
+            {task.picture ? (
               <img
-                src={`${API_BASE_URL}${task.picture}`}
+                src={task.picture}
                 alt={task.title}
                 className="task-card-image"
               />
+            ) : (
+              <div className={`task-card-placeholder ${getGradientClass(task)}`}>
+                <span className="task-card-placeholder-title">
+                  {task.title}
+                </span>
+              </div>
             )}
 
             <div className="task-card-body">
@@ -116,15 +132,17 @@ const MyTasks = () => {
                 <p className="task-card-desc">{task.description}</p>
               )}
 
-              <div className="task-card-meta">
-                <LocationOnIcon fontSize="small" />
-                {task.location}
-              </div>
+              <div className="task-card-meta-row">
+                <div className="task-card-meta">
+                  <LocationOnIcon fontSize="small" />
+                  {task.location}
+                </div>
 
-              <div className="task-card-meta">
-                <AccessTimeIcon fontSize="small" />
-                {formatDate(task.starttime)}
-                {task.endtime && ` — ${formatDate(task.endtime)}`}
+                <div className="task-card-meta">
+                  <AccessTimeIcon fontSize="small" />
+                  {formatDate(task.startTime)}
+                  {task.endTime && ` — ${formatDate(task.endTime)}`}
+                </div>
               </div>
 
               <div className="task-card-footer">

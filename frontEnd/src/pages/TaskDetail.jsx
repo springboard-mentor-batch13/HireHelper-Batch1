@@ -49,7 +49,7 @@ const TaskDetail = () => {
 
       {task.picture && (
         <img
-          src={`${API_BASE_URL}${task.picture}`}
+          src={task.picture}
           alt={task.title}
           className="task-detail-image"
         />
