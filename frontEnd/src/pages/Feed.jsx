@@ -144,7 +144,7 @@ const Feed = () => {
                         </div>
                       )}
                       <span>
-                        {task.createdBy?.first_name} {task.createdBy?.last_name}
+                        {task.createdBy?.first_name || "Task owner"}
                       </span>
                     </div>
 

@@ -1,4 +1,5 @@
 const { Task } = require("../models/Task");
+const { User } = require("../models/User");
 const { cloudinary } = require("../config/cloudinary");
 
 async function uploadToCloudinary(file) {
@@ -114,12 +115,34 @@ async function getTaskById(req, res) {
 }
 async function getFeedTasks(req, res) {
   try {
+    // Fetch tasks not created by the current user
     const tasks = await Task.find({ createdBy: { $ne: req.user.id } })
       .sort({ createdAt: -1 })
-      .populate("createdBy", "first_name last_name profile_picture")
-      .populate("requests");
+      .populate("requests")
+      .lean();
 
-    res.json({ success: true, data: tasks });
+    // Collect unique creator IDs
+    const creatorIds = Array.from(
+      new Set((tasks || []).map((t) => t.createdBy).filter(Boolean))
+    );
+
+    // Fetch minimal creator info by their stable UUID `id`
+    const creators = await User.find({ id: { $in: creatorIds } })
+      .select("id first_name last_name profile_picture")
+      .lean();
+
+    const creatorsById = {};
+    for (const u of creators) {
+      creatorsById[u.id] = u;
+    }
+
+    // Attach full creator object onto each task as `createdBy`
+    const tasksWithCreators = tasks.map((t) => ({
+      ...t,
+      createdBy: creatorsById[t.createdBy] || null,
+    }));
+
+    res.json({ success: true, data: tasksWithCreators });
   } catch (err) {
     res.status(500).json({ success: false, message: "Failed to fetch feed" });
   }

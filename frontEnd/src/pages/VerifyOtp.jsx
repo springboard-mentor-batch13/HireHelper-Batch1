@@ -88,6 +88,9 @@ const VerifyOtp = () => {
       if (data?.token) {
         setToken(data.token);
         localStorage.setItem("isLoggedIn", "true");
+        if (data.user) {
+          localStorage.setItem("user", JSON.stringify(data.user));
+        }
         toast.success("OTP verified successfully!");
         navigate("/dashboard", { replace: true });
       }
