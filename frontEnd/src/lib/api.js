@@ -9,8 +9,10 @@ export function setToken(token) {
   else localStorage.setItem("auth_token", token);
 }
 
+
 async function request(path, { method = "GET", body } = {}) {
   const token = getToken();
+
   const headers = { "Content-Type": "application/json" };
   if (token) headers.Authorization = `Bearer ${token}`;
 
@@ -35,10 +37,13 @@ async function request(path, { method = "GET", body } = {}) {
   return data;
 }
 
+
 async function upload(path, formData) {
   const token = getToken();
   const headers = {};
+
   if (token) headers.Authorization = `Bearer ${token}`;
+
 
   const res = await fetch(`${API_BASE_URL}${path}`, {
     method: "POST",
@@ -65,5 +70,5 @@ export const api = {
   get: (path) => request(path),
   post: (path, body) => request(path, { method: "POST", body }),
   put: (path, body) => request(path, { method: "PUT", body }),
-  upload: (path, formData) => upload(path, formData),
+  upload: (path, formData) => upload(path, formData), 
 };

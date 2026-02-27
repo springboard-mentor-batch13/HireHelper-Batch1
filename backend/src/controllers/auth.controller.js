@@ -17,6 +17,9 @@ function setAuthCookie(res, userId) {
   return token;
 }
 
+
+
+
 async function register(req, res, next) {
   try {
     const {
@@ -75,13 +78,15 @@ async function register(req, res, next) {
 
     return res.status(201).json({
       message: "Registered. OTP sent.",
-      user: user.toSafeJSON(),
       requiresOtp: true,
     });
   } catch (err) {
     next(err);
   }
 }
+
+
+
 
 async function login(req, res, next) {
   try {
@@ -103,8 +108,8 @@ async function login(req, res, next) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    const ok = await user.comparePassword(password);
-    if (!ok) {
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
@@ -112,25 +117,37 @@ async function login(req, res, next) {
       return res.status(403).json({
         message: "Email not verified. Please verify OTP.",
         requiresOtp: true,
-        user: user.toSafeJSON(),
       });
     }
 
     const token = setAuthCookie(res, user.id);
-    return res.json({ message: "Logged in", token, user: user.toSafeJSON() });
+    return res.json({
+      message: "Logged in",
+      token,
+      user: user.toSafeJSON(),
+    });
   } catch (err) {
     next(err);
   }
 }
+
+
+
 
 async function logout(req, res) {
   res.clearCookie("auth_token", authCookieOptions());
   return res.json({ message: "Logged out" });
 }
 
+
+
+
 async function me(req, res) {
   return res.json({ user: req.user });
 }
+
+
+
 
 async function sendOtp(req, res, next) {
   try {
@@ -150,7 +167,7 @@ async function sendOtp(req, res, next) {
 
     if (
       user.otp_last_sent_at &&
-      Date.now() - user.otp_last_sent_at.getTime() < 60_000
+      Date.now() - user.otp_last_sent_at.getTime() < 60000
     ) {
       return res
         .status(429)
@@ -172,6 +189,9 @@ async function sendOtp(req, res, next) {
   }
 }
 
+
+
+
 async function verifyOtp(req, res, next) {
   try {
     const { email_id, code } = req.body || {};
@@ -192,9 +212,7 @@ async function verifyOtp(req, res, next) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const actualHash = hashOtp(String(code));
-
-    if (actualHash !== user.otp_code_hash) {
+    if (hashOtp(String(code)) !== user.otp_code_hash) {
       return res.status(400).json({ message: "Invalid OTP" });
     }
 
@@ -216,4 +234,11 @@ async function verifyOtp(req, res, next) {
   }
 }
 
-module.exports = { register, login, logout, me, sendOtp, verifyOtp };
+module.exports = {
+  register,
+  login,
+  logout,
+  me,
+  sendOtp,
+  verifyOtp,
+};

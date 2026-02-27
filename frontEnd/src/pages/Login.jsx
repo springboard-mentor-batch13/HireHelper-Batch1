@@ -79,10 +79,8 @@ const Login = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={loading}
-            slotProps={{
-              input: {
-                startAdornment: <EmailIcon sx={{ color: "#94a3b8", mr: 1 }} />,
-              },
+            InputProps={{
+              startAdornment: <EmailIcon sx={{ color: "#94a3b8", mr: 1 }} />,
             }}
             sx={{ mb: 2.5 }}
           />
@@ -96,10 +94,8 @@ const Login = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={loading}
-            slotProps={{
-              input: {
-                startAdornment: <LockIcon sx={{ color: "#94a3b8", mr: 1 }} />,
-              },
+            InputProps={{
+              startAdornment: <LockIcon sx={{ color: "#94a3b8", mr: 1 }} />,
             }}
             sx={{ mb: 1 }}
           />

@@ -20,7 +20,7 @@ function getTransport() {
 }
 
 async function sendOtpEmail({ to, code }) {
-  // If SMTP isn't configured, we just log the OTP for local dev.
+
   if (!smtpConfigured()) {
     // eslint-disable-next-line no-console
     console.log(`[DEV OTP] Email to ${to}: ${code}`);

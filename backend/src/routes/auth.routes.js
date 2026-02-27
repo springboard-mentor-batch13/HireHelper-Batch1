@@ -9,7 +9,7 @@ authRouter.post("/register", register);
 authRouter.post("/login", login);
 authRouter.post("/logout", logout);
 
-// OTP endpoints (verification can be completed later)
+
 authRouter.post("/otp/send", sendOtp);
 authRouter.post("/otp/verify", verifyOtp);
 

@@ -1,7 +1,7 @@
 const crypto = require("crypto");
 
 function generateOtpCode() {
-  // 4-digit code
+  
   const code = String(Math.floor(1000 + Math.random() * 9000));
   return code;
 }
