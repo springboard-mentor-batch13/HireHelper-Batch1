@@ -1,29 +1,24 @@
-.feed-page {
-  padding: 2rem;
-  max-width: 1200px;
-}
-
 /* Header */
 .feed-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 2rem;
+  margin-bottom: 24px;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 12px;
 }
 
 .feed-title {
-  font-size: 1.8rem;
+  font-size: 24px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: #0f172a;
   margin: 0;
 }
 
 .feed-subtitle {
-  color: #6b7280;
-  margin: 0.25rem 0 0;
-  font-size: 0.95rem;
+  color: #64748b;
+  margin: 6px 0 0;
+  font-size: 14px;
 }
 
 /* Search */
@@ -36,6 +31,7 @@
   border-radius: 10px;
   padding: 0.5rem 1rem;
   width: 260px;
+  margin-top: 2px;
 }
 
 .feed-search input {
@@ -145,24 +141,32 @@
 }
 
 /* Meta */
-.task-card-meta {
+.task-card-meta-row {
   display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
   margin-top: 0.25rem;
 }
 
-.task-card-meta span {
+.task-card-meta {
   display: flex;
   align-items: center;
   gap: 0.35rem;
   font-size: 0.82rem;
   color: #6b7280;
+  min-width: 0;
+  flex: 0 1 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .task-card-meta .MuiSvgIcon-root {
   font-size: 1rem !important;
   color: #9ca3af;
+  flex: 0 0 auto;
 }
 
 /* Footer */
@@ -255,4 +259,51 @@
   padding: 4rem;
   color: #9ca3af;
   font-size: 1rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .feed-header {
+    align-items: stretch;
+  }
+
+  .feed-search {
+    width: 100%;
+  }
+
+  .feed-grid {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+  }
+
+  .task-card-image {
+    height: 160px;
+  }
+}
+
+@media (max-width: 480px) {
+  .feed-header {
+    align-items: stretch;
+  }
+
+  .feed-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .task-card-body {
+    padding: 1rem;
+  }
+
+  .task-card-image {
+    height: 140px;
+  }
+
+  .task-card-meta-row {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .task-card-meta {
+    flex: 1 1 100%;
+  }
 }

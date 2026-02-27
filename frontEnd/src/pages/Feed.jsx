@@ -25,7 +25,7 @@ const Feed = () => {
     const fetchFeed = async () => {
       try {
         const res = await api.get("/api/tasks/feed");
-        setTasks(res.data || []); // ✅ fixed: res is already parsed
+        setTasks(res.data || []); // backend returns { success, data }
       } catch (err) {
         toast.error("Failed to load feed");
       } finally {
@@ -37,7 +37,16 @@ const Feed = () => {
 
   const handleRequest = async (taskId) => {
     try {
-      await api.post(`/api/requests`, { taskId });
+      const res = await api.post(`/api/requests`, { taskId });
+
+      // Update local tasks list with the updated task (including requests)
+      if (res?.data?.task) {
+        const updatedTask = res.data.task;
+        setTasks((prev) =>
+          prev.map((t) => (t._id === updatedTask._id ? updatedTask : t))
+        );
+      }
+
       setRequestedIds((prev) => [...prev, taskId]);
       toast.success("Request sent!");
     } catch (err) {
@@ -52,7 +61,7 @@ const Feed = () => {
   );
 
   return (
-    <div className="feed-page">
+    <>
       {/* Header */}
       <div className="feed-header">
         <div>
@@ -107,15 +116,17 @@ const Feed = () => {
                     <p className="task-card-desc">{task.description}</p>
                   )}
 
-                  <div className="task-card-meta">
-                    <span>
+                  <div className="task-card-meta-row">
+                    <div className="task-card-meta">
                       <LocationOnIcon fontSize="inherit" />
                       {task.location}
-                    </span>
-                    <span>
+                    </div>
+
+                    <div className="task-card-meta">
                       <AccessTimeIcon fontSize="inherit" />
                       {formatDate(task.startTime)}
-                    </span>
+                      {task.endTime && ` — ${formatDate(task.endTime)}`}
+                    </div>
                   </div>
 
                   {/* Creator */}
@@ -151,7 +162,7 @@ const Feed = () => {
           })}
         </div>
       )}
-    </div>
+    </>
   );
 };
 

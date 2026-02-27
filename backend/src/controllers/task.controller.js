@@ -83,9 +83,9 @@ async function createTask(req, res) {
 
 async function getMyTasks(req, res) {
   try {
-    
     const tasks = await Task.find({ createdBy: req.user.id })
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .populate("requests");
 
     res.json({
       success: true,
@@ -102,7 +102,7 @@ async function getMyTasks(req, res) {
 
 async function getTaskById(req, res) {
   try {
-    const task = await Task.findById(req.params.id);
+    const task = await Task.findById(req.params.id).populate("requests");
     if (!task)
       return res
         .status(404)
@@ -116,7 +116,8 @@ async function getFeedTasks(req, res) {
   try {
     const tasks = await Task.find({ createdBy: { $ne: req.user.id } })
       .sort({ createdAt: -1 })
-      .populate("createdBy", "first_name last_name profile_picture");
+      .populate("createdBy", "first_name last_name profile_picture")
+      .populate("requests");
 
     res.json({ success: true, data: tasks });
   } catch (err) {

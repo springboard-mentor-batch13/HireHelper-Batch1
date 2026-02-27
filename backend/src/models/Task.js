@@ -39,8 +39,19 @@ const taskSchema = new mongoose.Schema(
       type: String,
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
 );
+
+// Virtual relation to requests for this task
+taskSchema.virtual("requests", {
+  ref: "Request",
+  localField: "_id",
+  foreignField: "task",
+});
 
 const Task = mongoose.model("Task", taskSchema);
 
