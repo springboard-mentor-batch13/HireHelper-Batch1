@@ -112,9 +112,21 @@ async function getTaskById(req, res) {
     res.status(500).json({ success: false, message: err.message });
   }
 }
+async function getFeedTasks(req, res) {
+  try {
+    const tasks = await Task.find({ createdBy: { $ne: req.user.id } })
+      .sort({ createdAt: -1 })
+      .populate("createdBy", "first_name last_name profile_picture");
+
+    res.json({ success: true, data: tasks });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Failed to fetch feed" });
+  }
+}
 
 module.exports = {
   createTask,
   getMyTasks,
   getTaskById,
+  getFeedTasks,
 };
