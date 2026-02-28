@@ -4,6 +4,9 @@ import Landing from "../pages/Landing";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
 import VerifyOtp from "../pages/VerifyOtp";
+import ForgotPassword from "../pages/ForgotPassword";
+import ResetVerifyOtp from "../pages/ResetVerifyOtp";
+import ResetPassword from "../pages/ResetPassword";
 import Dashboard from "../pages/Dashboard";
 import Feed from "../pages/Feed";
 import AddTask from "../pages/AddTasks";
@@ -36,7 +39,6 @@ const AppRoutes = () => {
         path="/"
         element={isLoggedIn ? <Navigate to="/dashboard" /> : <Landing />}
       />
-
       <Route
         path="/login"
         element={isLoggedIn ? <Navigate to="/dashboard" /> : <Login />}
@@ -46,6 +48,11 @@ const AppRoutes = () => {
         element={isLoggedIn ? <Navigate to="/dashboard" /> : <Register />}
       />
       <Route path="/verify-otp" element={<VerifyOtp />} />
+
+      {/* Forgot Password Routes - no auth needed */}
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-verify-otp" element={<ResetVerifyOtp />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
 
       <Route
         element={isLoggedIn ? <AppLayout /> : <Navigate to="/login" />}
