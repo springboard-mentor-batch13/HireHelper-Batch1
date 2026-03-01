@@ -61,6 +61,7 @@ async function createTask(req, res) {
 
       picture: pictureUrl,
       createdBy: req.user?.id,
+      sortOrder: 0,
     });
 
     res.status(201).json({
@@ -84,9 +85,19 @@ async function createTask(req, res) {
 
 async function getMyTasks(req, res) {
   try {
-    const tasks = await Task.find({ createdBy: req.user.id })
-      .sort({ createdAt: -1 })
-      .populate("requests");
+    const tasks = await Task.aggregate([
+      { $match: { createdBy: req.user.id } },
+      { $addFields: { sortOrder: { $ifNull: ["$sortOrder", 0] } } },
+      { $sort: { sortOrder: 1, createdAt: -1 } },
+      {
+        $lookup: {
+          from: "requests",
+          localField: "_id",
+          foreignField: "task",
+          as: "requests",
+        },
+      },
+    ]);
 
     res.json({
       success: true,
@@ -96,6 +107,54 @@ async function getMyTasks(req, res) {
     res.status(500).json({
       success: false,
       message: "Failed to fetch tasks",
+    });
+  }
+}
+
+async function reorderTasks(req, res) {
+  try {
+    const { taskIds } = req.body || {};
+
+    if (!Array.isArray(taskIds) || taskIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "taskIds array is required",
+      });
+    }
+
+    const tasks = await Task.find({
+      _id: { $in: taskIds },
+      createdBy: req.user.id,
+    });
+
+    if (tasks.length !== taskIds.length) {
+      return res.status(403).json({
+        success: false,
+        message: "Some tasks not found or not owned by you",
+      });
+    }
+
+    const updates = taskIds.map((id, index) => ({
+      updateOne: {
+        filter: { _id: id },
+        update: { $set: { sortOrder: index } },
+      },
+    }));
+
+    await Task.bulkWrite(updates);
+
+    const updated = await Task.find({ createdBy: req.user.id })
+      .sort({ sortOrder: 1, createdAt: -1 })
+      .populate("requests");
+
+    res.json({
+      success: true,
+      data: updated,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to reorder tasks",
     });
   }
 }
@@ -153,4 +212,5 @@ module.exports = {
   getMyTasks,
   getTaskById,
   getFeedTasks,
+  reorderTasks,
 };

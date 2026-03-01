@@ -151,4 +151,3 @@ const ResetVerifyOtp = () => {
 };
 
 export default ResetVerifyOtp;
-s

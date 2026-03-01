@@ -18,6 +18,8 @@ const requestSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+requestSchema.index({ task: 1, helper: 1 }, { unique: true });
+
 const Request = mongoose.model("Request", requestSchema);
 
 module.exports = { Request };

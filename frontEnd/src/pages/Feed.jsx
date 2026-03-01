@@ -21,6 +21,15 @@ const Feed = () => {
   const [search, setSearch] = useState("");
   const [requestedIds, setRequestedIds] = useState([]);
 
+  const currentUserId = (() => {
+    try {
+      const u = localStorage.getItem("user");
+      return u ? JSON.parse(u)?.id : null;
+    } catch {
+      return null;
+    }
+  })();
+
   useEffect(() => {
     const fetchFeed = async () => {
       try {
@@ -50,7 +59,7 @@ const Feed = () => {
       setRequestedIds((prev) => [...prev, taskId]);
       toast.success("Request sent!");
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to send request");
+      toast.error(err?.data?.message || err?.message || "Failed to send request");
     }
   };
 
@@ -92,7 +101,10 @@ const Feed = () => {
       ) : (
         <div className="feed-grid">
           {filtered.map((task) => {
-            const isRequested = requestedIds.includes(task._id);
+            const alreadyRequested =
+              task.requests?.some((r) => r.helper === currentUserId) ?? false;
+            const isRequested =
+              requestedIds.includes(task._id) || alreadyRequested;
             return (
               <div className="task-card" key={task._id}>
                 {/* Image */}
