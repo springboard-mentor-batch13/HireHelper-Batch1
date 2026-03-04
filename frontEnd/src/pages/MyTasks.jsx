@@ -7,7 +7,23 @@ import AddIcon from "@mui/icons-material/Add";
 import PeopleIcon from "@mui/icons-material/People";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import { toast } from "react-toastify";
-import { api, API_BASE_URL } from "../lib/api";
+import { api } from "../lib/api";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  rectSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import "./MyTasks.css";
 
 function formatDate(dateStr) {
@@ -35,17 +51,111 @@ function getGradientClass(task) {
   return `gradient-${idx}`;
 }
 
+function SortableTaskCard({ task, onNavigate }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task._id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`task-card ${isDragging ? "task-card-dragging" : ""}`}
+      {...attributes}
+      {...listeners}
+    >
+      {task.picture ? (
+        <img
+          src={task.picture}
+          alt={task.title}
+          className="task-card-image"
+        />
+      ) : (
+        <div className={`task-card-placeholder ${getGradientClass(task)}`}>
+          <span className="task-card-placeholder-title">
+            {task.title}
+          </span>
+        </div>
+      )}
+
+      <div className="task-card-body">
+        <div className="task-card-top">
+          <h3 className="task-card-title">{task.title}</h3>
+
+          <Chip
+            label={(task.status || "open").replace("_", " ")}
+            color={statusColors[task.status] || "success"}
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              onNavigate(task._id);
+            }}
+            sx={{
+              textTransform: "capitalize",
+              fontWeight: 500,
+              fontSize: 11,
+              cursor: "pointer",
+            }}
+          />
+        </div>
+
+        {task.description && (
+          <p className="task-card-desc">{task.description}</p>
+        )}
+
+        <div className="task-card-meta-row">
+          <div className="task-card-meta">
+            <LocationOnIcon fontSize="small" />
+            {task.location}
+          </div>
+
+          <div className="task-card-meta">
+            <AccessTimeIcon fontSize="small" />
+            {formatDate(task.startTime)}
+            {task.endTime && ` — ${formatDate(task.endTime)}`}
+          </div>
+        </div>
+
+        <div className="task-card-footer">
+          <PeopleIcon fontSize="small" />
+          {task.requests?.length || 0} request
+          {(task.requests?.length || 0) !== 1 ? "s" : ""}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const MyTasks = () => {
   const navigate = useNavigate();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   useEffect(() => {
     async function fetchTasks() {
       try {
-      
         const response = await api.get("/api/tasks/mine");
-
         setTasks(response.data || []);
       } catch (err) {
         toast.error(err.message || "Failed to load tasks");
@@ -55,6 +165,28 @@ const MyTasks = () => {
     }
     fetchTasks();
   }, []);
+
+  const handleDragEnd = async (event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = tasks.findIndex((t) => t._id === active.id);
+    const newIndex = tasks.findIndex((t) => t._id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const reordered = arrayMove(tasks, oldIndex, newIndex);
+    setTasks(reordered);
+
+    try {
+      const res = await api.patch("/api/tasks/reorder", {
+        taskIds: reordered.map((t) => t._id),
+      });
+      if (res?.data) setTasks(res.data);
+    } catch (err) {
+      toast.error(err.message || "Failed to save order");
+      setTasks(tasks);
+    }
+  };
 
   return (
     <div className="my-tasks-page">
@@ -93,67 +225,28 @@ const MyTasks = () => {
         </div>
       )}
 
-      <div className="tasks-grid">
-        {tasks.map((task) => (
-          <div className="task-card" key={task._id}>
-            {task.picture ? (
-              <img
-                src={task.picture}
-                alt={task.title}
-                className="task-card-image"
-              />
-            ) : (
-              <div className={`task-card-placeholder ${getGradientClass(task)}`}>
-                <span className="task-card-placeholder-title">
-                  {task.title}
-                </span>
-              </div>
-            )}
-
-            <div className="task-card-body">
-              <div className="task-card-top">
-                <h3 className="task-card-title">{task.title}</h3>
-
-                <Chip
-                  label={(task.status || "open").replace("_", " ")}
-                  color={statusColors[task.status] || "success"}
-                  size="small"
-                  onClick={() => navigate(`/task/${task._id}`)}
-                  sx={{
-                    textTransform: "capitalize",
-                    fontWeight: 500,
-                    fontSize: 11,
-                    cursor: "pointer",
-                  }}
+      {!loading && tasks.length > 0 && (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={tasks.map((t) => t._id)}
+            strategy={rectSortingStrategy}
+          >
+            <div className="tasks-grid">
+              {tasks.map((task) => (
+                <SortableTaskCard
+                  key={task._id}
+                  task={task}
+                  onNavigate={(id) => navigate(`/task/${id}`)}
                 />
-              </div>
-
-              {task.description && (
-                <p className="task-card-desc">{task.description}</p>
-              )}
-
-              <div className="task-card-meta-row">
-                <div className="task-card-meta">
-                  <LocationOnIcon fontSize="small" />
-                  {task.location}
-                </div>
-
-                <div className="task-card-meta">
-                  <AccessTimeIcon fontSize="small" />
-                  {formatDate(task.startTime)}
-                  {task.endTime && ` — ${formatDate(task.endTime)}`}
-                </div>
-              </div>
-
-              <div className="task-card-footer">
-                <PeopleIcon fontSize="small" />
-                {task.requests?.length || 0} request
-                {(task.requests?.length || 0) !== 1 ? "s" : ""}
-              </div>
+              ))}
             </div>
-          </div>
-        ))}
-      </div>
+          </SortableContext>
+        </DndContext>
+      )}
     </div>
   );
 };

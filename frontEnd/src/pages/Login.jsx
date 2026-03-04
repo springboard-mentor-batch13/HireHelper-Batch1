@@ -100,6 +100,16 @@ const Login = () => {
             sx={{ mb: 1 }}
           />
 
+          {/* Forgot Password Link */}
+          <div style={{ textAlign: "right", marginBottom: "8px" }}>
+            <span
+              style={styles.link}
+              onClick={() => navigate("/forgot-password")}
+            >
+              Forgot password?
+            </span>
+          </div>
+
           <Button
             type="submit"
             variant="contained"
@@ -165,7 +175,7 @@ const styles = {
     margin: "0 0 32px",
   },
   button: {
-    marginTop: "16px",
+    marginTop: "8px",
     padding: "12px",
     fontWeight: 600,
     fontSize: "15px",
@@ -181,6 +191,7 @@ const styles = {
     color: "#2563eb",
     cursor: "pointer",
     fontWeight: "600",
+    fontSize: "14px",
   },
 };
 

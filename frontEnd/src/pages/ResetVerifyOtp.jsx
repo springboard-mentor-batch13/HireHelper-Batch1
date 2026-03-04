@@ -2,21 +2,20 @@ import "./VerifyOtp.css";
 import { useMemo, useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { api, setToken } from "../lib/api";
+import { api } from "../lib/api";
 
-const VerifyOtp = () => {
+const ResetVerifyOtp = () => {
   const navigate = useNavigate();
   const [digits, setDigits] = useState(["", "", "", ""]);
   const [loading, setLoading] = useState(false);
   const inputRefs = useRef([]);
 
-  const emailId = sessionStorage.getItem("otp_email_id") || "";
+  const emailId = sessionStorage.getItem("reset_email_id") || "";
   const code = useMemo(() => digits.join(""), [digits]);
 
   const canSubmit = useMemo(() => {
     return emailId && code.length === 4 && !loading;
   }, [emailId, code, loading]);
-
 
   useEffect(() => {
     if (inputRefs.current[0]) {
@@ -31,8 +30,6 @@ const VerifyOtp = () => {
       next[idx] = cleaned;
       return next;
     });
-
-    
     if (cleaned && idx < 3) {
       setTimeout(() => {
         inputRefs.current[idx + 1]?.focus();
@@ -41,7 +38,6 @@ const VerifyOtp = () => {
   }
 
   function handleKeyDown(idx, e) {
-    
     if (e.key === "Backspace" && !digits[idx] && idx > 0) {
       inputRefs.current[idx - 1]?.focus();
       setDigits((prev) => {
@@ -49,9 +45,7 @@ const VerifyOtp = () => {
         next[idx - 1] = "";
         return next;
       });
-    }
-    
-    else if (e.key === "ArrowLeft" && idx > 0) {
+    } else if (e.key === "ArrowLeft" && idx > 0) {
       inputRefs.current[idx - 1]?.focus();
     } else if (e.key === "ArrowRight" && idx < 3) {
       inputRefs.current[idx + 1]?.focus();
@@ -67,7 +61,6 @@ const VerifyOtp = () => {
         newDigits[i] = pastedData[i];
       }
       setDigits(newDigits);
-      
       const nextEmptyIdx = newDigits.findIndex((d) => !d);
       const focusIdx = nextEmptyIdx === -1 ? 3 : nextEmptyIdx;
       setTimeout(() => {
@@ -79,29 +72,17 @@ const VerifyOtp = () => {
   async function onVerify() {
     try {
       setLoading(true);
-
-      const data = await api.post("/api/auth/otp/verify", {
+      await api.post("/api/auth/verify-reset-otp", {
         email_id: emailId,
         code,
       });
-
-      if (data?.token) {
-        setToken(data.token);
-        localStorage.setItem("isLoggedIn", "true");
-        if (data.user) {
-          localStorage.setItem("user", JSON.stringify(data.user));
-        }
-        toast.success("OTP verified successfully!");
-        navigate("/dashboard", { replace: true });
-      }
+      sessionStorage.setItem("reset_otp_code", code);
+      toast.success("OTP verified!");
+      navigate("/reset-password");
     } catch (e) {
-      const errorMessage = e.message || "OTP verification failed. Please check your code.";
-      toast.error(errorMessage);
-      
+      toast.error(e.message || "Invalid OTP");
       setDigits(["", "", "", ""]);
-      setTimeout(() => {
-        inputRefs.current[0]?.focus();
-      }, 0);
+      setTimeout(() => inputRefs.current[0]?.focus(), 0);
     } finally {
       setLoading(false);
     }
@@ -109,23 +90,13 @@ const VerifyOtp = () => {
 
   async function onResend() {
     try {
-      if (!emailId) {
-        const errorMsg = "Missing email. Please register/login again.";
-        toast.error(errorMsg);
-        return;
-      }
       setLoading(true);
-      await api.post("/api/auth/otp/send", { email_id: emailId });
-      const successMsg = "OTP resent successfully!";
-      toast.success(successMsg);
-      
+      await api.post("/api/auth/forgot-password", { email_id: emailId });
+      toast.success("OTP resent!");
       setDigits(["", "", "", ""]);
-      setTimeout(() => {
-        inputRefs.current[0]?.focus();
-      }, 0);
+      setTimeout(() => inputRefs.current[0]?.focus(), 0);
     } catch (e) {
-      const errorMessage = e.message || "Failed to resend OTP";
-      toast.error(errorMessage);
+      toast.error(e.message || "Failed to resend OTP");
     } finally {
       setLoading(false);
     }
@@ -134,11 +105,11 @@ const VerifyOtp = () => {
   return (
     <div className="otp-page">
       <div className="otp-card">
-        <h1>Verify your account</h1>
-        <p className="subtitle">Enter the 4-digit verification code sent to your email</p>
+        <h1>Reset Password</h1>
+        <p className="subtitle">Enter the 4-digit code sent to your email</p>
 
         <div style={{ marginBottom: "10px", color: "#64748b", fontSize: "14px" }}>
-          {emailId ? `Email: ${emailId}` : "Missing email. Go back to register/login."}
+          {emailId ? `Email: ${emailId}` : "Missing email. Go back."}
         </div>
 
         <div className="otp-inputs">
@@ -158,12 +129,12 @@ const VerifyOtp = () => {
           ))}
         </div>
 
-        <button className="verify-btn" disabled={!canSubmit || loading} onClick={onVerify}>
-          {loading ? "Verifying..." : "Verify & Continue"}
+        <button className="verify-btn" disabled={!canSubmit} onClick={onVerify}>
+          {loading ? "Verifying..." : "Verify OTP"}
         </button>
 
         <p className="resend">
-          Didn’t receive the code?{" "}
+          Didn't receive the code?{" "}
           <span style={{ cursor: "pointer" }} onClick={onResend}>
             Resend
           </span>
@@ -179,4 +150,4 @@ const VerifyOtp = () => {
   );
 };
 
-export default VerifyOtp;
+export default ResetVerifyOtp;

@@ -1,5 +1,6 @@
 const { Request } = require("../models/Request");
 const { Task } = require("../models/Task");
+const { User } = require("../models/User");
 
 // Create a new request for a task
 async function createRequest(req, res) {
@@ -40,14 +41,26 @@ async function createRequest(req, res) {
     });
 
     // Fetch updated task with requests populated so frontend can update counts
-    const updatedTask = await Task.findById(taskId).populate("requests");
+    const updatedTaskDoc = await Task.findById(taskId).populate("requests").lean();
+
+    let taskWithCreator = updatedTaskDoc;
+    if (updatedTaskDoc) {
+      const creator =
+        (await User.findOne({ id: updatedTaskDoc.createdBy })
+          .select("id first_name last_name profile_picture")
+          .lean()) || null;
+      taskWithCreator = {
+        ...updatedTaskDoc,
+        createdBy: creator,
+      };
+    }
 
     return res.status(201).json({
       success: true,
       message: "Request created successfully",
       data: {
         request,
-        task: updatedTask,
+        task: taskWithCreator,
       },
     });
   } catch (err) {

@@ -38,6 +38,10 @@ const taskSchema = new mongoose.Schema(
     picture: {
       type: String,
     },
+    sortOrder: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,

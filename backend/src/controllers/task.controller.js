@@ -1,4 +1,5 @@
 const { Task } = require("../models/Task");
+const { User } = require("../models/User");
 const { cloudinary } = require("../config/cloudinary");
 
 async function uploadToCloudinary(file) {
@@ -60,6 +61,7 @@ async function createTask(req, res) {
 
       picture: pictureUrl,
       createdBy: req.user?.id,
+      sortOrder: 0,
     });
 
     res.status(201).json({
@@ -83,9 +85,19 @@ async function createTask(req, res) {
 
 async function getMyTasks(req, res) {
   try {
-    const tasks = await Task.find({ createdBy: req.user.id })
-      .sort({ createdAt: -1 })
-      .populate("requests");
+    const tasks = await Task.aggregate([
+      { $match: { createdBy: req.user.id } },
+      { $addFields: { sortOrder: { $ifNull: ["$sortOrder", 0] } } },
+      { $sort: { sortOrder: 1, createdAt: -1 } },
+      {
+        $lookup: {
+          from: "requests",
+          localField: "_id",
+          foreignField: "task",
+          as: "requests",
+        },
+      },
+    ]);
 
     res.json({
       success: true,
@@ -95,6 +107,54 @@ async function getMyTasks(req, res) {
     res.status(500).json({
       success: false,
       message: "Failed to fetch tasks",
+    });
+  }
+}
+
+async function reorderTasks(req, res) {
+  try {
+    const { taskIds } = req.body || {};
+
+    if (!Array.isArray(taskIds) || taskIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "taskIds array is required",
+      });
+    }
+
+    const tasks = await Task.find({
+      _id: { $in: taskIds },
+      createdBy: req.user.id,
+    });
+
+    if (tasks.length !== taskIds.length) {
+      return res.status(403).json({
+        success: false,
+        message: "Some tasks not found or not owned by you",
+      });
+    }
+
+    const updates = taskIds.map((id, index) => ({
+      updateOne: {
+        filter: { _id: id },
+        update: { $set: { sortOrder: index } },
+      },
+    }));
+
+    await Task.bulkWrite(updates);
+
+    const updated = await Task.find({ createdBy: req.user.id })
+      .sort({ sortOrder: 1, createdAt: -1 })
+      .populate("requests");
+
+    res.json({
+      success: true,
+      data: updated,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to reorder tasks",
     });
   }
 }
@@ -114,12 +174,34 @@ async function getTaskById(req, res) {
 }
 async function getFeedTasks(req, res) {
   try {
+    // Fetch tasks not created by the current user
     const tasks = await Task.find({ createdBy: { $ne: req.user.id } })
       .sort({ createdAt: -1 })
-      .populate("createdBy", "first_name last_name profile_picture")
-      .populate("requests");
+      .populate("requests")
+      .lean();
 
-    res.json({ success: true, data: tasks });
+    // Collect unique creator IDs
+    const creatorIds = Array.from(
+      new Set((tasks || []).map((t) => t.createdBy).filter(Boolean))
+    );
+
+    // Fetch minimal creator info by their stable UUID `id`
+    const creators = await User.find({ id: { $in: creatorIds } })
+      .select("id first_name last_name profile_picture")
+      .lean();
+
+    const creatorsById = {};
+    for (const u of creators) {
+      creatorsById[u.id] = u;
+    }
+
+    // Attach full creator object onto each task as `createdBy`
+    const tasksWithCreators = tasks.map((t) => ({
+      ...t,
+      createdBy: creatorsById[t.createdBy] || null,
+    }));
+
+    res.json({ success: true, data: tasksWithCreators });
   } catch (err) {
     res.status(500).json({ success: false, message: "Failed to fetch feed" });
   }
@@ -130,4 +212,5 @@ module.exports = {
   getMyTasks,
   getTaskById,
   getFeedTasks,
+  reorderTasks,
 };
