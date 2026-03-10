@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Chip } from "@mui/material";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
@@ -41,6 +41,13 @@ const statusColors = {
   cancelled: "default",
 };
 
+const statusOptions = [
+  { value: "open", label: "Open" },
+  { value: "in_progress", label: "In Progress" },
+  { value: "completed", label: "Completed" },
+  { value: "cancelled", label: "Cancelled" },
+];
+
 function getGradientClass(task) {
   const key = task._id || task.title || "";
   let hash = 0;
@@ -51,7 +58,80 @@ function getGradientClass(task) {
   return `gradient-${idx}`;
 }
 
-function SortableTaskCard({ task, onNavigate }) {
+// Status dropdown component
+function StatusDropdown({ taskId, currentStatus, onStatusChange }) {
+  const [open, setOpen] = useState(false);
+  const [updating, setUpdating] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  async function handleSelect(newStatus) {
+    if (newStatus === currentStatus) {
+      setOpen(false);
+      return;
+    }
+    try {
+      setUpdating(true);
+      await api.patch(`/api/tasks/${taskId}/status`, { status: newStatus });
+      onStatusChange(taskId, newStatus);
+      toast.success(`Status updated to ${newStatus.replace("_", " ")}`);
+    } catch (err) {
+      toast.error(err.message || "Failed to update status");
+    } finally {
+      setUpdating(false);
+      setOpen(false);
+    }
+  }
+
+  return (
+    <div ref={dropdownRef} style={{ position: "relative" }}>
+      <Chip
+        label={updating ? "Updating..." : (currentStatus || "open").replace("_", " ")}
+        color={statusColors[currentStatus] || "success"}
+        size="small"
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((prev) => !prev);
+        }}
+        sx={{
+          textTransform: "capitalize",
+          fontWeight: 500,
+          fontSize: 11,
+          cursor: "pointer",
+        }}
+      />
+
+      {open && (
+        <div className="status-dropdown">
+          {statusOptions.map((opt) => (
+            <div
+              key={opt.value}
+              className={`status-dropdown-item ${opt.value === currentStatus ? "active" : ""}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSelect(opt.value);
+              }}
+            >
+              {opt.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SortableTaskCard({ task, onNavigate, onStatusChange }) {
   const {
     attributes,
     listeners,
@@ -75,37 +155,20 @@ function SortableTaskCard({ task, onNavigate }) {
       {...listeners}
     >
       {task.picture ? (
-        <img
-          src={task.picture}
-          alt={task.title}
-          className="task-card-image"
-        />
+        <img src={task.picture} alt={task.title} className="task-card-image" />
       ) : (
         <div className={`task-card-placeholder ${getGradientClass(task)}`}>
-          <span className="task-card-placeholder-title">
-            {task.title}
-          </span>
+          <span className="task-card-placeholder-title">{task.title}</span>
         </div>
       )}
 
       <div className="task-card-body">
         <div className="task-card-top">
           <h3 className="task-card-title">{task.title}</h3>
-
-          <Chip
-            label={(task.status || "open").replace("_", " ")}
-            color={statusColors[task.status] || "success"}
-            size="small"
-            onClick={(e) => {
-              e.stopPropagation();
-              onNavigate(task._id);
-            }}
-            sx={{
-              textTransform: "capitalize",
-              fontWeight: 500,
-              fontSize: 11,
-              cursor: "pointer",
-            }}
+          <StatusDropdown
+            taskId={task._id}
+            currentStatus={task.status}
+            onStatusChange={onStatusChange}
           />
         </div>
 
@@ -118,7 +181,6 @@ function SortableTaskCard({ task, onNavigate }) {
             <LocationOnIcon fontSize="small" />
             {task.location}
           </div>
-
           <div className="task-card-meta">
             <AccessTimeIcon fontSize="small" />
             {formatDate(task.startTime)}
@@ -142,14 +204,8 @@ const MyTasks = () => {
   const [loading, setLoading] = useState(true);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
   useEffect(() => {
@@ -188,6 +244,13 @@ const MyTasks = () => {
     }
   };
 
+  // Update status locally without refetching
+  const handleStatusChange = (taskId, newStatus) => {
+    setTasks((prev) =>
+      prev.map((t) => (t._id === taskId ? { ...t, status: newStatus } : t))
+    );
+  };
+
   return (
     <div className="my-tasks-page">
       <div className="my-tasks-header">
@@ -196,12 +259,7 @@ const MyTasks = () => {
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => navigate("/add-task")}
-          sx={{
-            textTransform: "none",
-            fontWeight: 600,
-            borderRadius: "8px",
-            px: 2.5,
-          }}
+          sx={{ textTransform: "none", fontWeight: 600, borderRadius: "8px", px: 2.5 }}
         >
           New Task
         </Button>
@@ -241,6 +299,7 @@ const MyTasks = () => {
                   key={task._id}
                   task={task}
                   onNavigate={(id) => navigate(`/task/${id}`)}
+                  onStatusChange={handleStatusChange}
                 />
               ))}
             </div>

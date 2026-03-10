@@ -1,44 +1,96 @@
-const TopBar = () => {
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const initial = user.first_name ? user.first_name.charAt(0).toUpperCase() : "👤";
+import { useEffect, useState, useRef } from "react";
+import { IconButton, Badge, Avatar } from "@mui/material";
+import NotificationsIcon from "@mui/icons-material/Notifications";
+import { api } from "../lib/api";
+import "./TopBar.css";
+
+const TopBar = ({ title }) => {
+  const [notifications, setNotifications] = useState([]);
+  const [open, setOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000); // poll every 30s
+    return () => clearInterval(interval);
+  }, []);
+
+  async function fetchNotifications() {
+    try {
+      const res = await api.get("/api/requests/notifications");
+      setNotifications(res.data || []);
+    } catch (err) {
+      // silently fail
+    }
+  }
+
+  async function handleOpen() {
+    setOpen((prev) => !prev);
+    if (!open && unreadCount > 0) {
+      try {
+        await api.patch("/api/requests/notifications/read");
+        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      } catch (err) {
+        // silently fail
+      }
+    }
+  }
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
-    <div style={{
-      height: "60px",
-      background: "#f8fafc",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      padding: "0 20px",
-      borderBottom: "1px solid #e5e7eb"
-    }}>
-      <h3>Dashboard</h3>
-      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-        <div style={{
-          width: "32px",
-          height: "32px",
-          borderRadius: "50%",
-          background: "#2563eb",
-          color: "#fff",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontWeight: "600"
-        }}>
-          {user.profile_picture ? (
-            <img src={user.profile_picture} alt="Profile" style={{ width: "100%", height: "100%", borderRadius: "50%" }} />
-          ) : (
-            initial
-          )}
-        </div>
-        <div>
-          <div style={{ fontSize: "14px", fontWeight: "600" }}>
-            {user.first_name} {user.last_name}
+    <div className="topbar">
+      <h1 className="topbar-title">{title}</h1>
+
+      <div className="topbar-right" ref={dropdownRef}>
+        <IconButton onClick={handleOpen} size="small">
+          <Badge badgeContent={unreadCount} color="error" max={9}>
+            <NotificationsIcon sx={{ color: "#475569" }} />
+          </Badge>
+        </IconButton>
+
+        {open && (
+          <div className="notif-dropdown">
+            <div className="notif-header">
+              <span>Notifications</span>
+              {unreadCount > 0 && (
+                <span className="notif-unread-badge">{unreadCount} new</span>
+              )}
+            </div>
+
+            {notifications.length === 0 ? (
+              <div className="notif-empty">No notifications yet</div>
+            ) : (
+              <div className="notif-list">
+                {notifications.map((n) => (
+                  <div
+                    key={n._id}
+                    className={`notif-item ${!n.read ? "notif-unread" : ""}`}
+                  >
+                    <span className="notif-message">{n.message}</span>
+                    <span className="notif-time">
+                      {new Date(n.createdAt).toLocaleString(undefined, {
+                        dateStyle: "short",
+                        timeStyle: "short",
+                      })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-          <div style={{ fontSize: "12px", color: "#64748b" }}>
-            {user.email_id}
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

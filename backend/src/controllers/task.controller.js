@@ -19,23 +19,14 @@ async function uploadToCloudinary(file) {
   });
 }
 
-
 async function createTask(req, res) {
   try {
     console.log("REQ BODY:", req.body);
     console.log("REQ FILE:", req.file);
     console.log("REQ USER:", req.user);
 
-    
-    const {
-      title,
-      description,
-      location,
-      start_time,
-      end_time
-    } = req.body;
+    const { title, description, location, start_time, end_time } = req.body;
 
-    
     if (!title || !location || !start_time) {
       return res.status(400).json({
         success: false,
@@ -55,10 +46,8 @@ async function createTask(req, res) {
       title,
       description,
       location,
-
       startTime: start_time,
       endTime: finalEndTime,
-
       picture: pictureUrl,
       createdBy: req.user?.id,
       sortOrder: 0,
@@ -69,7 +58,6 @@ async function createTask(req, res) {
       message: "Task created successfully",
       data: task,
     });
-
   } catch (error) {
     console.error("CREATE TASK ERROR:", error);
     res.status(500).json({
@@ -79,9 +67,6 @@ async function createTask(req, res) {
     });
   }
 }
-
-
-
 
 async function getMyTasks(req, res) {
   try {
@@ -99,15 +84,9 @@ async function getMyTasks(req, res) {
       },
     ]);
 
-    res.json({
-      success: true,
-      data: tasks,
-    });
+    res.json({ success: true, data: tasks });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch tasks",
-    });
+    res.status(500).json({ success: false, message: "Failed to fetch tasks" });
   }
 }
 
@@ -147,45 +126,72 @@ async function reorderTasks(req, res) {
       .sort({ sortOrder: 1, createdAt: -1 })
       .populate("requests");
 
-    res.json({
-      success: true,
-      data: updated,
-    });
+    res.json({ success: true, data: updated });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to reorder tasks",
-    });
+    res.status(500).json({ success: false, message: "Failed to reorder tasks" });
   }
 }
 
+// ─── Update Task Status ───────────────────────────────────────────────────────
+
+async function updateTaskStatus(req, res) {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const validStatuses = ["open", "in_progress", "completed", "cancelled"];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid status. Must be one of: ${validStatuses.join(", ")}`,
+      });
+    }
+
+    // Find task and make sure it belongs to the logged in user
+    const task = await Task.findOne({ _id: id, createdBy: req.user.id });
+
+    if (!task) {
+      return res.status(404).json({
+        success: false,
+        message: "Task not found or you don't have permission to update it",
+      });
+    }
+
+    task.status = status;
+    await task.save();
+
+    res.json({
+      success: true,
+      message: "Task status updated successfully",
+      data: task,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Failed to update status" });
+  }
+}
 
 async function getTaskById(req, res) {
   try {
     const task = await Task.findById(req.params.id).populate("requests");
     if (!task)
-      return res
-        .status(404)
-        .json({ success: false, message: "Task not found" });
+      return res.status(404).json({ success: false, message: "Task not found" });
     res.json({ success: true, data: task });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 }
+
 async function getFeedTasks(req, res) {
   try {
-    // Fetch tasks not created by the current user
     const tasks = await Task.find({ createdBy: { $ne: req.user.id } })
       .sort({ createdAt: -1 })
       .populate("requests")
       .lean();
 
-    // Collect unique creator IDs
     const creatorIds = Array.from(
       new Set((tasks || []).map((t) => t.createdBy).filter(Boolean))
     );
 
-    // Fetch minimal creator info by their stable UUID `id`
     const creators = await User.find({ id: { $in: creatorIds } })
       .select("id first_name last_name profile_picture")
       .lean();
@@ -195,7 +201,6 @@ async function getFeedTasks(req, res) {
       creatorsById[u.id] = u;
     }
 
-    // Attach full creator object onto each task as `createdBy`
     const tasksWithCreators = tasks.map((t) => ({
       ...t,
       createdBy: creatorsById[t.createdBy] || null,
@@ -213,4 +218,5 @@ module.exports = {
   getTaskById,
   getFeedTasks,
   reorderTasks,
+  updateTaskStatus,
 };

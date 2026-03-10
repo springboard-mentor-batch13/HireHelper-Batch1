@@ -9,10 +9,14 @@ const requestSchema = new mongoose.Schema(
       index: true,
     },
     helper: {
-      // ID of the user who requested to help
       type: String,
       required: true,
       index: true,
+    },
+    status: {
+      type: String,
+      enum: ["pending", "accepted", "declined"],
+      default: "pending",
     },
   },
   { timestamps: true }
@@ -21,6 +25,4 @@ const requestSchema = new mongoose.Schema(
 requestSchema.index({ task: 1, helper: 1 }, { unique: true });
 
 const Request = mongoose.model("Request", requestSchema);
-
 module.exports = { Request };
-
