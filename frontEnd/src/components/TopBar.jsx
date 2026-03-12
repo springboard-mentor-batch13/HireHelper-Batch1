@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
-import { IconButton, Badge, Avatar } from "@mui/material";
+import { IconButton, Badge } from "@mui/material";
 import NotificationsIcon from "@mui/icons-material/Notifications";
+import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 import "./TopBar.css";
 
@@ -8,12 +9,13 @@ const TopBar = ({ title }) => {
   const [notifications, setNotifications] = useState([]);
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const navigate = useNavigate();
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000); // poll every 30s
+    const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -38,7 +40,16 @@ const TopBar = ({ title }) => {
     }
   }
 
-  // Close dropdown when clicking outside
+  function handleNotifClick(notification) {
+    setOpen(false);
+    const msg = notification.message?.toLowerCase() || "";
+    if (msg.includes("accepted") || msg.includes("declined")) {
+      navigate("/my-requests");
+    } else {
+      navigate("/requests");
+    }
+  }
+
   useEffect(() => {
     function handleClickOutside(e) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -77,6 +88,8 @@ const TopBar = ({ title }) => {
                   <div
                     key={n._id}
                     className={`notif-item ${!n.read ? "notif-unread" : ""}`}
+                    onClick={() => handleNotifClick(n)}
+                    style={{ cursor: "pointer" }}
                   >
                     <span className="notif-message">{n.message}</span>
                     <span className="notif-time">
