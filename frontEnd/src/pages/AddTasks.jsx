@@ -58,25 +58,36 @@ const AddTask = () => {
       setLoading(true);
 
       const formData = new FormData();
+
+      // ✅ IMPORTANT: field names must match backend EXACTLY
       formData.append("title", title.trim());
       formData.append("description", description.trim());
       formData.append("location", location.trim());
-      formData.append("start_time", new Date(startTime).toISOString());
+      formData.append("startTime", startTime); // ✅ FIXED
       if (endTime) {
-        formData.append("end_time", endTime);}
+        formData.append("endTime", endTime); // ✅ FIXED
+      }
 
       if (picture) {
         formData.append("picture", picture);
       }
 
-    
-      await api.upload("/api/tasks", formData);
+      // ✅ DEBUG (very important)
+      console.log("---- FORM DATA ----");
+      for (let pair of formData.entries()) {
+        console.log(pair[0], pair[1]);
+      }
+
+      const res = await api.upload("/api/tasks", formData);
+
+      console.log("✅ TASK CREATED:", res);
 
       toast.success("Task created successfully!");
       navigate("/my-tasks");
+
     } catch (err) {
-      console.error("TASK CREATE ERROR:", err);
-      toast.error(err.response?.data?.message || "Failed to create task");
+      console.error("❌ TASK CREATE ERROR:", err);
+      toast.error(err?.data?.message || err.message);
     } finally {
       setLoading(false);
     }
@@ -91,6 +102,7 @@ const AddTask = () => {
 
       <div className="add-task-card">
         <form onSubmit={handleSubmit}>
+
           {/* Details */}
           <div className="form-section">
             <div className="form-section-label">
@@ -170,7 +182,7 @@ const AddTask = () => {
               ref={fileRef}
               type="file"
               hidden
-              accept="image/jpeg,image/png,image/gif,image/webp"
+              accept="image/*"
               onChange={handlePictureChange}
             />
 
@@ -181,9 +193,7 @@ const AddTask = () => {
               {!preview ? (
                 <div className="upload-placeholder">
                   <CloudUploadIcon />
-                  <p>
-                    <span>Click to upload</span> an image
-                  </p>
+                  <p><span>Click to upload</span> an image</p>
                 </div>
               ) : (
                 <div className="preview-wrapper">

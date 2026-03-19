@@ -1,20 +1,30 @@
 export const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-function getToken() {
-  return localStorage.getItem("auth_token") || "";
+let authToken = null;
+try {
+  authToken = localStorage.getItem("token");
+} catch {
+  authToken = null;
 }
 
 export function setToken(token) {
-  if (!token) localStorage.removeItem("auth_token");
-  else localStorage.setItem("auth_token", token);
+  authToken = token || null;
+  try {
+    if (authToken) localStorage.setItem("token", authToken);
+    else localStorage.removeItem("token");
+  } catch {
+    // ignore storage failures (e.g. private mode / disabled)
+  }
+
+  // Notify route guards/components that auth state changed immediately.
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("auth-changed"));
+  }
 }
 
-
 async function request(path, { method = "GET", body } = {}) {
-  const token = getToken();
-
   const headers = { "Content-Type": "application/json" };
-  if (token) headers.Authorization = `Bearer ${token}`;
+  if (authToken) headers.Authorization = `Bearer ${authToken}`;
 
   const res = await fetch(`${API_BASE_URL}${path}`, {
     method,
@@ -39,11 +49,8 @@ async function request(path, { method = "GET", body } = {}) {
 
 
 async function upload(path, formData) {
-  const token = getToken();
   const headers = {};
-
-  if (token) headers.Authorization = `Bearer ${token}`;
-
+  if (authToken) headers.Authorization = `Bearer ${authToken}`;
 
   const res = await fetch(`${API_BASE_URL}${path}`, {
     method: "POST",
@@ -71,5 +78,6 @@ export const api = {
   post: (path, body) => request(path, { method: "POST", body }),
   put: (path, body) => request(path, { method: "PUT", body }),
   patch: (path, body) => request(path, { method: "PATCH", body }),
+  delete: (path) => request(path, { method: "DELETE" }),
   upload: (path, formData) => upload(path, formData),
 };

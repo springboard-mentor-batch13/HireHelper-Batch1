@@ -215,6 +215,7 @@ const MyTasks = () => {
   const [editPictureFile, setEditPictureFile] = useState(null);
   const [editPreview, setEditPreview] = useState(null);
   const [uploadingPicture, setUploadingPicture] = useState(false);
+  const [deletingTask, setDeletingTask] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -277,7 +278,7 @@ const MyTasks = () => {
   };
 
   const closeEditDialog = () => {
-    if (savingEdit || uploadingPicture) return;
+    if (savingEdit || uploadingPicture || deletingTask) return;
     setEditingTask(null);
   };
 
@@ -347,6 +348,24 @@ const MyTasks = () => {
       toast.error(err.message || "Failed to update task");
     } finally {
       setSavingEdit(false);
+    }
+  };
+
+  const handleDeleteTask = async () => {
+    if (!editingTask) return;
+    const confirmed = window.confirm("Delete this task permanently?");
+    if (!confirmed) return;
+
+    try {
+      setDeletingTask(true);
+      await api.delete(`/api/tasks/${editingTask._id}`);
+      setTasks((prev) => prev.filter((t) => t._id !== editingTask._id));
+      toast.success("Task deleted");
+      setEditingTask(null);
+    } catch (err) {
+      toast.error(err.message || "Failed to delete task");
+    } finally {
+      setDeletingTask(false);
     }
   };
 
@@ -506,13 +525,21 @@ const MyTasks = () => {
           </div>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={closeEditDialog} disabled={savingEdit || uploadingPicture} sx={{ textTransform: "none" }}>
+          <Button
+            color="error"
+            onClick={handleDeleteTask}
+            disabled={savingEdit || uploadingPicture || deletingTask}
+            sx={{ textTransform: "none", mr: "auto" }}
+          >
+            {deletingTask ? "Deleting..." : "Delete Task"}
+          </Button>
+          <Button onClick={closeEditDialog} disabled={savingEdit || uploadingPicture || deletingTask} sx={{ textTransform: "none" }}>
             Cancel
           </Button>
           <Button
             variant="contained"
             onClick={handleSaveEdit}
-            disabled={savingEdit || uploadingPicture}
+            disabled={savingEdit || uploadingPicture || deletingTask}
             sx={{ textTransform: "none" }}
           >
             {savingEdit ? "Saving..." : "Save"}

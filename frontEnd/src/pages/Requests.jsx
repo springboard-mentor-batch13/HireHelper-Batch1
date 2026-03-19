@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
-import { Avatar, Chip, Button, CircularProgress } from "@mui/material";
-import CheckIcon from "@mui/icons-material/Check";
-import CloseIcon from "@mui/icons-material/Close";
-import AssignmentIcon from "@mui/icons-material/Assignment";
+import { Chip, Button, CircularProgress } from "@mui/material";
 import { toast } from "react-toastify";
 import { api } from "../lib/api";
-import "./Requests.css";
+import { getSocket } from "../lib/socket";
+import { useNavigate } from "react-router-dom";
 
 const statusColors = {
   pending: "warning",
@@ -13,141 +11,140 @@ const statusColors = {
   declined: "error",
 };
 
-function getInitials(user) {
-  if (!user) return "?";
-  return `${user.first_name?.[0] || ""}${user.last_name?.[0] || ""}`.toUpperCase();
-}
-
 const Requests = () => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(null);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     async function fetchRequests() {
       try {
         const res = await api.get("/api/requests/received");
         setRequests(res.data || []);
-      } catch (err) {
+      } catch {
         toast.error("Failed to load requests");
       } finally {
         setLoading(false);
       }
     }
+
     fetchRequests();
   }, []);
 
-  async function handleUpdate(requestId, status) {
+  useEffect(() => {
+    const socket = getSocket();
+    const handleTaskDeleted = ({ taskId }) => {
+      if (!taskId) return;
+      setRequests((prev) => prev.filter((r) => r.task?._id !== taskId));
+    };
+
+    socket.on("task:deleted", handleTaskDeleted);
+    return () => {
+      socket.off("task:deleted", handleTaskDeleted);
+    };
+  }, []);
+
+  async function handleUpdate(requestId, status, taskId) {
     try {
       setUpdating(requestId);
+
       await api.patch(`/api/requests/${requestId}`, { status });
+
       setRequests((prev) =>
-        prev.map((r) => (r._id === requestId ? { ...r, status } : r))
+        prev.map((r) =>
+          r._id === requestId ? { ...r, status } : r
+        )
       );
+
       toast.success(`Request ${status}`);
-    } catch (err) {
-      toast.error(err.message || "Failed to update request");
+
+      if (status === "accepted") {
+        navigate(`/chat/${taskId}`);
+      }
+    } catch {
+      toast.error("Update failed");
     } finally {
       setUpdating(null);
     }
   }
 
-  return (
-    <div className="requests-page">
-      <div className="requests-header">
-        <h2>Requests</h2>
-        <span className="requests-count">{requests.length} total</span>
+  if (loading)
+    return (
+      <div style={{ padding: 30 }}>
+        <CircularProgress />
       </div>
+    );
 
-      {loading && (
-        <div className="requests-loading">
-          <CircularProgress size={32} />
-        </div>
-      )}
+  if (!requests.length)
+    return <div style={{ padding: 30 }}>No Requests Found</div>;
 
-      {!loading && requests.length === 0 && (
-        <div className="requests-empty">
-          <AssignmentIcon className="empty-icon" />
-          <h3>No requests yet</h3>
-          <p>When someone requests to help with your tasks, they'll appear here.</p>
-        </div>
-      )}
+  return (
+    <div style={{ padding: 20 }}>
+      <h2>Requests</h2>
 
-      {!loading && requests.length > 0 && (
-        <div className="requests-list">
-          {requests.map((req) => (
-            <div key={req._id} className="request-card">
-              <div className="request-task-banner">
-                {req.task?.picture ? (
-                  <img src={req.task.picture} alt={req.task.title} />
-                ) : (
-                  <div className="request-task-placeholder">
-                    <AssignmentIcon />
-                  </div>
-                )}
-                <span className="request-task-title">{req.task?.title || "Unknown Task"}</span>
-              </div>
+      {requests.map((req) => (
+        <div
+          key={req._id}
+          style={{
+            border: "1px solid #ddd",
+            padding: 15,
+            marginBottom: 10,
+          }}
+        >
+          <h3>{req.task?.title}</h3>
 
-              <div className="request-card-body">
-                <div className="request-helper-row">
-                  <Avatar
-                    src={req.helper?.profile_picture}
-                    sx={{ width: 44, height: 44, bgcolor: "#2563eb", fontSize: 16 }}
-                  >
-                    {getInitials(req.helper)}
-                  </Avatar>
-                  <div className="request-helper-info">
-                    <span className="request-helper-name">
-                      {req.helper?.first_name} {req.helper?.last_name}
-                    </span>
-                    <span className="request-helper-email">{req.helper?.email_id}</span>
-                  </div>
-                  <Chip
-                    label={req.status}
-                    color={statusColors[req.status] || "default"}
-                    size="small"
-                    sx={{ textTransform: "capitalize", fontWeight: 600, ml: "auto" }}
-                  />
-                </div>
+          <p>
+            {req.helper?.first_name} {req.helper?.last_name}
+          </p>
 
-                <div className="request-time">
-                  {new Date(req.createdAt).toLocaleString(undefined, {
-                    dateStyle: "medium",
-                    timeStyle: "short",
-                  })}
-                </div>
+          <Chip
+            label={req.status}
+            color={statusColors[req.status]}
+          />
 
-                {req.status === "pending" && (
-                  <div className="request-actions">
-                    <Button
-                      variant="contained"
-                      color="success"
-                      size="small"
-                      startIcon={<CheckIcon />}
-                      disabled={updating === req._id}
-                      onClick={() => handleUpdate(req._id, "accepted")}
-                      sx={{ textTransform: "none", borderRadius: "8px", flex: 1 }}
-                    >
-                      Accept
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      size="small"
-                      startIcon={<CloseIcon />}
-                      disabled={updating === req._id}
-                      onClick={() => handleUpdate(req._id, "declined")}
-                      sx={{ textTransform: "none", borderRadius: "8px", flex: 1 }}
-                    >
-                      Decline
-                    </Button>
-                  </div>
-                )}
-              </div>
+          {req.status === "pending" && (
+            <div style={{ marginTop: 10 }}>
+              <Button
+                variant="contained"
+                color="success"
+                disabled={updating === req._id}
+                onClick={() =>
+                  handleUpdate(req._id, "accepted", req.task?._id)
+                }
+                sx={{ mr: 1 }}
+              >
+                Accept
+              </Button>
+
+              <Button
+                variant="outlined"
+                color="error"
+                disabled={updating === req._id}
+                onClick={() =>
+                  handleUpdate(req._id, "declined", req.task?._id)
+                }
+              >
+                Decline
+              </Button>
             </div>
-          ))}
+          )}
+
+          {req.status === "accepted" && (
+            <div style={{ marginTop: 10 }}>
+              <Button
+                variant="contained"
+                onClick={() =>
+                  navigate(`/chat/${req.task?._id}`)
+                }
+              >
+                Open Chat
+              </Button>
+            </div>
+          )}
         </div>
-      )}
+      ))}
     </div>
   );
 };

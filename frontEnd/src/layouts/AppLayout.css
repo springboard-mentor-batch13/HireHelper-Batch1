@@ -1,12 +1,16 @@
 .app-layout {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
   width: 100%;
+  overflow: hidden;
 }
 
 .app-content {
   flex: 1;
   background-color: #f8fafc;
+  margin-left: 260px;
+  height: 100vh;
+  overflow-y: auto;
 }
 .app-page {
   padding: 24px 32px 32px;

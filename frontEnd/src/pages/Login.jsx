@@ -5,26 +5,32 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { api, setToken } from "../lib/api";
+import { getSocket } from "../lib/socket";
 
 const Login = () => {
   const navigate = useNavigate();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   const canSubmit = useMemo(() => {
-    return email.trim() && password && !loading;
+    return email.trim() !== "" && password !== "" && !loading;
   }, [email, password, loading]);
 
   async function onLogin() {
     try {
       setLoading(true);
 
+      // ✅ CALL API (your api.js returns data directly)
       const data = await api.post("/api/auth/login", {
         email_id: email.trim(),
         password,
       });
 
+      console.log("🔥 LOGIN RESPONSE:", data);
+
+      // ✅ OTP FLOW
       if (data?.requiresOtp) {
         sessionStorage.setItem("otp_email_id", email.trim());
         toast.info("OTP verification required");
@@ -32,22 +38,54 @@ const Login = () => {
         return;
       }
 
-      if (data?.token) {
-        setToken(data.token);
+      // ✅ SUCCESS LOGIN
+      if (data?.user || data?.id) {
+        // ✅ GET USER ID SAFELY
+        const userId =
+          data?.user?._id ||
+          data?.user?.id ||
+          data?._id ||
+          data?.id ||
+          data?.user?.userId;
+
+        if (!userId) {
+          console.error("❌ userId missing in response:", data);
+          toast.error("Login failed: userId missing");
+          return;
+        }
+
+        console.log("✅ Logged in user:", userId);
+
+        if (data?.token) {
+          setToken(data.token);
+        }
         localStorage.setItem("isLoggedIn", "true");
-        localStorage.setItem("user", JSON.stringify(data.user));
-        toast.success("Login successful!");
+        if (data?.user) {
+          localStorage.setItem("user", JSON.stringify(data.user));
+        }
+
+        // ✅ CONNECT SOCKET
+        getSocket();
+
+        toast.success("Login successful");
+        
+        // Use a small delay or window.location.href to ensure cookies are processed?
+        // Actually navigate should be fine as it's the same domain.
+        // We need to notify AppRoutes that login status changed.
+        // For now, let's keep it simple.
         navigate("/dashboard", { replace: true });
+        window.location.reload(); // re-runs /me check with persisted token
+      } else {
+        toast.error("Invalid login response");
       }
-    } catch (e) {
-      if (e?.data?.requiresOtp) {
-        sessionStorage.setItem("otp_email_id", email.trim());
-        toast.info("OTP verification required");
-        navigate("/verify-otp");
-        return;
-      }
-      const errorMessage = e.message || "Login failed. Please check your credentials.";
-      toast.error(errorMessage);
+    } catch (err) {
+      console.error("❌ LOGIN ERROR:", err);
+
+      toast.error(
+        err?.data?.message ||
+        err?.message ||
+        "Login failed"
+      );
     } finally {
       setLoading(false);
     }
@@ -55,11 +93,11 @@ const Login = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (canSubmit) {
-      onLogin();
-    } else {
-      toast.warning("Please fill in all required fields");
+    if (!canSubmit) {
+      toast.warning("Enter email and password");
+      return;
     }
+    onLogin();
   };
 
   return (
@@ -67,7 +105,9 @@ const Login = () => {
       <div style={styles.card}>
         <div style={styles.logoMark}>H</div>
         <h1 style={styles.title}>Welcome Back</h1>
-        <p style={styles.subtitle}>Sign in to your HireHelper account</p>
+        <p style={styles.subtitle}>
+          Sign in to your HireHelper account
+        </p>
 
         <form onSubmit={handleSubmit}>
           <TextField
@@ -75,14 +115,13 @@ const Login = () => {
             label="Email"
             type="email"
             required
-            variant="outlined"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={loading}
+            sx={{ mb: 2 }}
             InputProps={{
-              startAdornment: <EmailIcon sx={{ color: "#94a3b8", mr: 1 }} />,
+              startAdornment: <EmailIcon sx={{ mr: 1 }} />,
             }}
-            sx={{ mb: 2.5 }}
           />
 
           <TextField
@@ -90,18 +129,16 @@ const Login = () => {
             label="Password"
             type="password"
             required
-            variant="outlined"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={loading}
-            InputProps={{
-              startAdornment: <LockIcon sx={{ color: "#94a3b8", mr: 1 }} />,
-            }}
             sx={{ mb: 1 }}
+            InputProps={{
+              startAdornment: <LockIcon sx={{ mr: 1 }} />,
+            }}
           />
 
-          {/* Forgot Password Link */}
-          <div style={{ textAlign: "right", marginBottom: "8px" }}>
+          <div style={{ textAlign: "right", marginBottom: 12 }}>
             <span
               style={styles.link}
               onClick={() => navigate("/forgot-password")}
@@ -110,20 +147,30 @@ const Login = () => {
             </span>
           </div>
 
-          <Button
-            type="submit"
-            variant="contained"
-            fullWidth
-            disabled={!canSubmit || loading}
-            sx={styles.button}
-          >
-            {loading ? "Signing in..." : "Sign In"}
-          </Button>
+          <div style={{ textAlign: "center" }}>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={!canSubmit}
+              sx={{
+                width: "100%",
+                padding: "10px",
+                fontSize: "14px",
+                borderRadius: "8px",
+                textTransform: "none",
+              }}
+            >
+              {loading ? "Signing In..." : "Sign In"}
+            </Button>
+          </div>
         </form>
 
         <p style={styles.footer}>
-          Don&apos;t have an account?{" "}
-          <span style={styles.link} onClick={() => navigate("/register")}>
+          Don’t have an account?{" "}
+          <span
+            style={styles.link}
+            onClick={() => navigate("/register")}
+          >
             Create one
           </span>
         </p>
@@ -135,63 +182,39 @@ const Login = () => {
 const styles = {
   container: {
     minHeight: "100vh",
-    background: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)",
+    background: "linear-gradient(135deg,#0f172a,#1e293b)",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    padding: "20px",
   },
   card: {
-    background: "#ffffff",
-    padding: "48px 40px 40px",
-    borderRadius: "16px",
-    width: "100%",
-    maxWidth: "500px",
+    background: "#fff",
+    padding: 40,
+    borderRadius: 12,
+    width: 420,
     textAlign: "center",
-    boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
+    boxShadow: "0 20px 50px rgba(0,0,0,0.3)",
   },
   logoMark: {
-    width: "56px",
-    height: "56px",
-    borderRadius: "14px",
+    width: 50,
+    height: 50,
+    borderRadius: 12,
     background: "#1976d2",
     color: "#fff",
-    fontSize: "28px",
-    fontWeight: "800",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    margin: "0 auto 20px",
+    margin: "0 auto 15px",
+    fontWeight: "bold",
+    fontSize: 22,
   },
-  title: {
-    fontSize: "24px",
-    fontWeight: "700",
-    color: "#0f172a",
-    margin: "0 0 6px",
-  },
-  subtitle: {
-    color: "#64748b",
-    fontSize: "14px",
-    margin: "0 0 32px",
-  },
-  button: {
-    marginTop: "8px",
-    padding: "12px",
-    fontWeight: 600,
-    fontSize: "15px",
-    textTransform: "none",
-    borderRadius: "10px",
-  },
-  footer: {
-    marginTop: "24px",
-    fontSize: "14px",
-    color: "#64748b",
-  },
+  title: { marginBottom: 5 },
+  subtitle: { marginBottom: 25, color: "gray" },
+  footer: { marginTop: 25 },
   link: {
-    color: "#2563eb",
+    color: "#1976d2",
     cursor: "pointer",
-    fontWeight: "600",
-    fontSize: "14px",
+    fontWeight: 600,
   },
 };
 

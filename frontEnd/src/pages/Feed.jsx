@@ -4,6 +4,7 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import PersonIcon from "@mui/icons-material/Person";
 import SearchIcon from "@mui/icons-material/Search";
 import { api } from "../lib/api";
+import { getSocket } from "../lib/socket";
 import { toast } from "react-toastify";
 import "./Feed.css";
 
@@ -42,6 +43,20 @@ const Feed = () => {
       }
     };
     fetchFeed();
+  }, []);
+
+  useEffect(() => {
+    const socket = getSocket();
+    const handleTaskDeleted = ({ taskId }) => {
+      if (!taskId) return;
+      setTasks((prev) => prev.filter((t) => t._id !== taskId));
+      setRequestedIds((prev) => prev.filter((id) => id !== taskId));
+    };
+
+    socket.on("task:deleted", handleTaskDeleted);
+    return () => {
+      socket.off("task:deleted", handleTaskDeleted);
+    };
   }, []);
 
   const handleRequest = async (taskId) => {

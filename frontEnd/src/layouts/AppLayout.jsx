@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import TopBar from "../components/TopBar";
 import { toast } from "react-toastify";
@@ -18,6 +18,7 @@ const pageTitles = {
 
 const AppLayout = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const title = pageTitles[location.pathname] || "HireHelper";
 
   useEffect(() => {
@@ -31,6 +32,35 @@ const AppLayout = () => {
         "Someone";
 
       toast.info(`${helperName} requested to help with "${taskTitle || "your task"}"`);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("notifications-updated"));
+      }
+
+      try {
+        const audio = new Audio("/notification.mp3");
+        audio.play().catch(() => {});
+      } catch {
+        // ignore audio errors
+      }
+    };
+
+    const handleChatMessage = (payload) => {
+      const { taskId, senderName, text } = payload || {};
+      const onSameChatPage = location.pathname === `/chat/${taskId}`;
+      if (onSameChatPage) return;
+
+      const preview = text && text.length > 50 ? `${text.slice(0, 50)}...` : text;
+      toast.info(`${senderName || "Someone"}: ${preview || "sent a message"}`, {
+        onClick: () => {
+          if (taskId) {
+            navigate(`/chat/${taskId}`);
+          }
+        },
+      });
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("notifications-updated"));
+      }
 
       try {
         const audio = new Audio("/notification.mp3");
@@ -41,11 +71,13 @@ const AppLayout = () => {
     };
 
     socket.on("task:requested", handleTaskRequested);
+    socket.on("chat:new_message", handleChatMessage);
 
     return () => {
       socket.off("task:requested", handleTaskRequested);
+      socket.off("chat:new_message", handleChatMessage);
     };
-  }, []);
+  }, [location.pathname, navigate]);
 
   return (
     <div className="app-layout">

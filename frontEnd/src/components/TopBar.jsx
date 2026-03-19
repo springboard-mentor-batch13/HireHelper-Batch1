@@ -16,7 +16,17 @@ const TopBar = ({ title }) => {
   useEffect(() => {
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
+
+    const handleNotificationsUpdated = () => {
+      fetchNotifications();
+    };
+
+    window.addEventListener("notifications-updated", handleNotificationsUpdated);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("notifications-updated", handleNotificationsUpdated);
+    };
   }, []);
 
   async function fetchNotifications() {

@@ -7,6 +7,7 @@ const taskRouter = require("./routes/task.routes");
 const requestRouter = require("./routes/request.routes");
 const { notFoundHandler, errorHandler } = require("./middleware/errors");
 
+
 function createApp() {
   const app = express();
 
@@ -31,6 +32,9 @@ function createApp() {
   app.use("/api/auth", authRouter);
   app.use("/api/tasks", taskRouter);
   app.use("/api/requests", requestRouter);
+
+  const chatRoutes = require("./routes/chatRoutes");
+  app.use("/api/chat", chatRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

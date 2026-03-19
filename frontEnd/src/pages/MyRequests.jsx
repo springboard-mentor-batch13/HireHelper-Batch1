@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
-import { Avatar, Chip, CircularProgress } from "@mui/material";
+import { Avatar, Chip, CircularProgress, Button } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import { toast } from "react-toastify";
 import { api } from "../lib/api";
+import { getSocket } from "../lib/socket";
+import { useNavigate } from "react-router-dom";
 import "./MyRequests.css";
 
 const statusColors = {
@@ -15,18 +17,34 @@ const MyRequests = () => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const navigate = useNavigate();
+
   useEffect(() => {
     async function fetchRequests() {
       try {
         const res = await api.get("/api/requests/sent");
         setRequests(res.data || []);
-      } catch (err) {
+      } catch {
         toast.error("Failed to load your requests");
       } finally {
         setLoading(false);
       }
     }
+
     fetchRequests();
+  }, []);
+
+  useEffect(() => {
+    const socket = getSocket();
+    const handleTaskDeleted = ({ taskId }) => {
+      if (!taskId) return;
+      setRequests((prev) => prev.filter((r) => r.task?._id !== taskId));
+    };
+
+    socket.on("task:deleted", handleTaskDeleted);
+    return () => {
+      socket.off("task:deleted", handleTaskDeleted);
+    };
   }, []);
 
   return (
@@ -55,6 +73,7 @@ const MyRequests = () => {
           {requests.map((req) => {
             const task = req.task || {};
             const creator = task.createdBy || {};
+
             return (
               <div key={req._id} className="my-request-card">
                 {task.picture ? (
@@ -67,7 +86,10 @@ const MyRequests = () => {
 
                 <div className="my-request-body">
                   <div className="my-request-top">
-                    <span className="my-request-task-title">{task.title || "Unknown Task"}</span>
+                    <span className="my-request-task-title">
+                      {task.title || "Unknown Task"}
+                    </span>
+
                     <Chip
                       label={req.status}
                       color={statusColors[req.status] || "default"}
@@ -83,21 +105,42 @@ const MyRequests = () => {
                   <div className="my-request-creator-row">
                     <Avatar
                       src={creator.profile_picture}
-                      sx={{ width: 24, height: 24, fontSize: 11, bgcolor: "#e2e8f0", color: "#475569" }}
+                      sx={{
+                        width: 24,
+                        height: 24,
+                        fontSize: 11,
+                        bgcolor: "#e2e8f0",
+                        color: "#475569",
+                      }}
                     >
                       {creator.first_name?.[0] || "?"}
                     </Avatar>
+
                     <span className="my-request-creator-name">
                       {creator.first_name} {creator.last_name}
                     </span>
                   </div>
 
                   <span className="my-request-time">
-                    Sent {new Date(req.createdAt).toLocaleString(undefined, {
+                    Sent{" "}
+                    {new Date(req.createdAt).toLocaleString(undefined, {
                       dateStyle: "medium",
                       timeStyle: "short",
                     })}
                   </span>
+
+                  {/* ✅ CHAT BUTTON  */}
+                  {req.status === "accepted" && (
+                    <div style={{ marginTop: "10px" }}>
+                      <Button
+                        variant="contained"
+                        size="small"
+                        onClick={() => navigate(`/chat/${task._id}`)}
+                      >
+                        Open Chat
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             );

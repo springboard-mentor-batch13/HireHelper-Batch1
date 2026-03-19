@@ -11,6 +11,7 @@ const {
   updateTaskStatus,
   updateTask,
   updateTaskPicture,
+  deleteTask,
 } = require("../controllers/task.controller");
 
 const { requireAuth } = require("../middleware/auth");
@@ -22,6 +23,7 @@ router.patch("/:id/picture", requireAuth, upload.single("picture"), updateTaskPi
 router.get("/feed", requireAuth, getFeedTasks);
 router.get("/mine", requireAuth, getMyTasks);
 router.patch("/:id", requireAuth, updateTask);
+router.delete("/:id", requireAuth, deleteTask);
 router.get("/:id", getTaskById);
 
 module.exports = router;
