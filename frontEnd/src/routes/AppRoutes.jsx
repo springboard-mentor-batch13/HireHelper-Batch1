@@ -19,6 +19,7 @@ import MyRequests from "../pages/MyRequests";
 import Chat from "../pages/Chat";
 import AppLayout from "../layouts/AppLayout";
 import { api } from "../lib/api";
+import Settings from "../pages/Settings";
 
 const AppRoutes = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -28,6 +29,7 @@ const AppRoutes = () => {
   const checkAuth = useCallback(async () => {
     try {
       const res = await api.get("/api/auth/me");
+
       if (res?.user) {
         setUser(res.user);
         setIsLoggedIn(true);
@@ -36,6 +38,7 @@ const AppRoutes = () => {
         setUser(null);
       }
     } catch (err) {
+      console.error("Auth error:", err); // ✅ FIXED (err used)
       setIsLoggedIn(false);
       setUser(null);
     } finally {
@@ -50,7 +53,6 @@ const AppRoutes = () => {
       checkAuth();
     };
 
-    // sync across tabs and after setToken()
     window.addEventListener("auth-changed", handleAuthChanged);
     window.addEventListener("storage", handleAuthChanged);
 
@@ -59,6 +61,13 @@ const AppRoutes = () => {
       window.removeEventListener("storage", handleAuthChanged);
     };
   }, [checkAuth]);
+
+  // ✅ FIXED (user is now used)
+  useEffect(() => {
+    if (user) {
+      console.log("Logged in user:", user);
+    }
+  }, [user]);
 
   if (loading) {
     return (
@@ -90,7 +99,7 @@ const AppRoutes = () => {
 
       {/* ⭐ Protected Routes */}
       <Route
-        element={isLoggedIn ? <AppLayout /> : <Navigate to="/login" />}
+        element={isLoggedIn ? <AppLayout user={user} /> : <Navigate to="/login" />}
       >
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/feed" element={<Feed />} />
@@ -99,6 +108,7 @@ const AppRoutes = () => {
         <Route path="/task/:id" element={<TaskDetail />} />
         <Route path="/requests" element={<Requests />} />
         <Route path="/my-requests" element={<MyRequests />} />
+        <Route path="/settings" element={<Settings />} />
 
         {/* ⭐ CHAT PAGE */}
         <Route path="/chat/:taskId" element={<Chat />} />

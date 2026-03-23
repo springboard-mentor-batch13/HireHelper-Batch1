@@ -13,29 +13,47 @@ import "./Sidebar.css";
 import { useEffect, useState } from "react";
 
 const Sidebar = () => {
-  const [user, setUser] = useState({});
+  // ✅ FIX: Only ONE useState (with initializer)
+  const [user, setUser] = useState(() => {
+    const storedUser = localStorage.getItem("user");
+    return storedUser ? JSON.parse(storedUser) : {};
+  });
+
   const navigate = useNavigate();
 
+  // ✅ Listen for updates from Settings page
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+    const handleUserUpdate = () => {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+    };
+
+    window.addEventListener("user-updated", handleUserUpdate);
+
+    return () => {
+      window.removeEventListener("user-updated", handleUserUpdate);
+    };
   }, []);
 
-  const initial = user.first_name ? user.first_name.charAt(0).toUpperCase() : "👤";
+  const initial = user?.first_name
+    ? user.first_name.charAt(0).toUpperCase()
+    : "👤";
 
   const handleLogout = async () => {
     try {
       await api.post("/api/auth/logout");
       setToken(null);
       localStorage.removeItem("isLoggedIn");
+      localStorage.removeItem("user");
       toast.success("Logged out successfully");
       navigate("/login", { replace: true });
-    } catch (e) {
+    } catch {
       setToken(null);
       localStorage.removeItem("isLoggedIn");
-      toast.error(e.message || "Logout failed, but you've been logged out locally");
+      localStorage.removeItem("user");
+      toast.error("Logout failed");
       navigate("/login", { replace: true });
     }
   };
@@ -83,36 +101,44 @@ const Sidebar = () => {
 
       <div className="sidebar-bottom">
         <NavLink to="/profile" className="profile-link">
-          {user.profile_picture ? (
+          {user?.profile_picture ? (
             <img
               src={user.profile_picture}
               alt="Profile"
-              style={{ width: "32px", height: "32px", borderRadius: "50%" }}
+              style={{
+                width: "32px",
+                height: "32px",
+                borderRadius: "50%",
+              }}
             />
           ) : (
-            <div style={{
-              width: "32px",
-              height: "32px",
-              borderRadius: "50%",
-              background: "#2563eb",
-              color: "#fff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontWeight: "600",
-            }}>
+            <div
+              style={{
+                width: "32px",
+                height: "32px",
+                borderRadius: "50%",
+                background: "#2563eb",
+                color: "#fff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontWeight: "600",
+              }}
+            >
               {initial}
             </div>
           )}
+
           <div>
             <div style={{ fontSize: "14px", fontWeight: "600" }}>
-              {user.first_name} {user.last_name}
+              {user?.first_name} {user?.last_name}
             </div>
             <div style={{ fontSize: "12px", color: "#cbd5f5" }}>
-              {user.email_id}
+              {user?.email_id}
             </div>
           </div>
         </NavLink>
+
         <div className="logout-btn" onClick={handleLogout}>
           <LogoutIcon />
         </div>
