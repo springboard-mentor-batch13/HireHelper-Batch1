@@ -26,7 +26,7 @@ async function request(path, { method = "GET", body } = {}) {
   const headers = { "Content-Type": "application/json" };
   if (authToken) headers.Authorization = `Bearer ${authToken}`;
 
-  const res = await fetch(`${API_BASE_URL}${path}`, {
+  const res = await fetch(`${API_BASE_URL}${path}?t=${Date.now()}`, {
     method,
     headers,
     credentials: "include",
