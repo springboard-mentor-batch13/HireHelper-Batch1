@@ -29,6 +29,7 @@ const UserSchema = new mongoose.Schema(
     password: { type: String, required: true, select: false },
 
     profile_picture: { type: String, default: "" },
+    bio: { type: String, default: "" },
 
     is_email_verified: { type: Boolean, default: false },
     otp_code_hash: { type: String, default: "", select: false },
@@ -56,6 +57,7 @@ UserSchema.methods.toSafeJSON = function () {
     phone_number: this.phone_number,
     email_id: this.email_id,
     profile_picture: this.profile_picture,
+    bio: this.bio || "",
     is_email_verified: this.is_email_verified,
     createdAt: this.createdAt,
     updatedAt: this.updatedAt,
