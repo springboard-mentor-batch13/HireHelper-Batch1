@@ -336,5 +336,3 @@ VITE_SOCKET_URL=http://localhost:3000
 This project is open-source and created for learning and development purposes.
 
 ```
-
-💡 This project demonstrates full-stack development skills including authentication, real-time communication, API design, and scalable architecture.
