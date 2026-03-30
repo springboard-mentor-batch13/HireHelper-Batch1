@@ -10,49 +10,45 @@ const userRoutes = require("./routes/user.routes");
 const reviewRouter = require("./routes/review.routes");
 
 
-function createApp() {
-  const app = express();
-  
-  const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:5173")
-    .split(",")
-    .map(o => o.trim());
+const app = express();
 
-  app.use(
-    cors({
-      origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
-          callback(null, true);
-        } else {
-          callback(new Error("Not allowed by CORS"));
-        }
-      },
-      credentials: true,
-      methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      allowedHeaders: ["Content-Type", "Authorization"],
-    })
-  );
+const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:5173")
+  .split(",")
+  .map(o => o.trim());
 
-  app.use(express.json({ limit: "1mb" }));
-  app.use(express.urlencoded({ extended: true }));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
-  app.use(cookieParser());
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: true }));
 
-  // Health check endpoint
-  app.get("/health", (req, res) => res.json({ ok: true }));
+app.use(cookieParser());
 
-  app.use("/api/auth", authRouter);
-  app.use("/api/tasks", taskRouter);
-  app.use("/api/requests", requestRouter);
-  app.use("/api/user", userRoutes);
+// Health check endpoint
+app.get("/health", (req, res) => res.json({ ok: true }));
 
-  const chatRoutes = require("./routes/chatRoutes");
-  app.use("/api/chat", chatRoutes);
-  app.use("/api/reviews", reviewRouter);
+app.use("/api/auth", authRouter);
+app.use("/api/tasks", taskRouter);
+app.use("/api/requests", requestRouter);
+app.use("/api/user", userRoutes);
 
-  app.use(notFoundHandler);
-  app.use(errorHandler);
+const chatRoutes = require("./routes/chatRoutes");
+app.use("/api/chat", chatRoutes);
+app.use("/api/reviews", reviewRouter);
 
-  return app;
-}
+app.use(notFoundHandler);
+app.use(errorHandler);
 
-module.exports = { createApp };
+module.exports = app;

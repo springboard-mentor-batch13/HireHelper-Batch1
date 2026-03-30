@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const { connectDb } = require("../src/config/db");
-const { createApp } = require("../src/app");
+const app = require("../src/app");
 
 let cachedApp = null;
 
@@ -12,7 +12,7 @@ module.exports = async (req, res) => {
     }
     
     if (!cachedApp) {
-      cachedApp = createApp();
+      cachedApp = app;
     }
     
     // Express app is just a (req, res) handler
