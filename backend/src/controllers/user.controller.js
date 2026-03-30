@@ -1,5 +1,5 @@
 const { User } = require("../models/User");
-const { cloudinary } = require("../config/Cloudinary");
+const { cloudinary } = require("../config/cloudinary");
 
 
 const getMe = async (req, res) => {
