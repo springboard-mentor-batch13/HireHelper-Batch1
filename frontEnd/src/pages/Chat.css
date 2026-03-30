@@ -314,3 +314,206 @@
     max-width: 86%;
   }
 }
+
+/* WEBRTC CALL UI */
+.call-actions-group {
+  display: flex;
+  gap: 10px;
+  margin-right: 12px;
+}
+
+.call-btn-small {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--text-main);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.call-btn-small::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.call-btn-small:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.call-btn-small:hover::before {
+  opacity: 1;
+}
+
+.call-btn-small:active {
+  transform: translateY(0) scale(0.95);
+}
+
+.call-btn-small.audio-call {
+  color: #10b981; /* Emerald-500 */
+}
+
+.call-btn-small.audio-call:hover {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+  color: #34d399; /* Emerald-400 */
+}
+
+.call-btn-small.video-call {
+  color: #6366f1; /* Indigo-500 */
+}
+
+.call-btn-small.video-call:hover {
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+  color: #818cf8; /* Indigo-400 */
+}
+
+.call-btn-small svg {
+  z-index: 1;
+  font-size: 20px;
+}
+
+.call-ringing-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  border-radius: 12px;
+}
+
+.call-ringing-box {
+  background: var(--bg-card);
+  padding: 30px;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.call-ringing-box h3 {
+  margin: 0 0 10px;
+  font-size: 20px;
+}
+
+.call-ringing-box p {
+  margin: 0 0 24px;
+  color: var(--text-muted);
+}
+
+.ringing-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.ringing-accept {
+  background: #10b981;
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 20px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ringing-decline {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 20px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.active-call-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: #111;
+  z-index: 90;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.video-streams {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+}
+
+.remote-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.local-video {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  width: 120px;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 2px solid rgba(255,255,255,0.2);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  transform: scaleX(-1);
+}
+
+.audio-call-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1f2937, #111827);
+}
+
+.call-controls {
+  position: absolute;
+  bottom: 30px;
+  left: 0; right: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.end-call-btn {
+  background: #ef4444;
+  color: white;
+  border: none;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  transition: transform 0.2s;
+}
+
+.end-call-btn:hover {
+  transform: translateY(-2px);
+}

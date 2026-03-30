@@ -1,4 +1,5 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { createPortal } from "react-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import FeedIcon from "@mui/icons-material/DynamicFeed";
@@ -22,6 +23,8 @@ const Sidebar = () => {
   });
 
   const navigate = useNavigate();
+  const location = useLocation();
+  const [incomingCall, setIncomingCall] = useState(null);
 
   // ✅ Listen for updates from Settings page
   useEffect(() => {
@@ -61,6 +64,43 @@ const Sidebar = () => {
       socket.off("rating_updated", handleRatingUpdated);
     };
   }, []);
+
+  // ✅ Listen for global incoming calls
+  useEffect(() => {
+    const socket = getSocket();
+    
+    const handleWebrtcOffer = (data) => {
+      // If we are already on the chat page for this task, ignore it natively
+      if (location.pathname.includes(`/chat/${data.taskId}`)) {
+        return;
+      }
+      
+      const currentUserId = user?._id || user?.id;
+      if (data.senderId === currentUserId) return; // Prevent own calls
+
+      setIncomingCall(data);
+    };
+
+    socket.on("webrtc_offer", handleWebrtcOffer);
+
+    return () => {
+      socket.off("webrtc_offer", handleWebrtcOffer);
+    };
+  }, [location.pathname, user]);
+
+  const acceptGlobalCall = () => {
+    if (!incomingCall) return;
+    const { taskId } = incomingCall;
+    setIncomingCall(null);
+    navigate(`/chat/${taskId}`, { state: { autoAcceptCall: incomingCall } });
+  };
+
+  const declineGlobalCall = () => {
+    if (!incomingCall) return;
+    const socket = getSocket();
+    socket.emit("end_call", { taskId: incomingCall.taskId });
+    setIncomingCall(null);
+  };
 
   const initial = user?.first_name
     ? user.first_name.charAt(0).toUpperCase()
@@ -176,6 +216,49 @@ const Sidebar = () => {
           <span>Logout</span>
         </div>
       </div>
+
+      {/* GLOBAL INCOMING CALL MODAL */}
+      {incomingCall && createPortal(
+        <div style={{
+          position: "fixed",
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: "rgba(0,0,0,0.85)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          zIndex: 2147483647,
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          color: "white"
+        }}>
+          <div style={{
+            background: "#1e1e2d",
+            padding: "30px",
+            borderRadius: "12px",
+            textAlign: "center",
+            minWidth: "300px",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.5)"
+          }}>
+            <h3 style={{ margin: "0 0 10px 0", fontSize: "24px" }}>Incoming Call...</h3>
+            <p style={{ margin: "0 0 20px 0", color: "#aaa" }}>
+              {incomingCall.video ? "Video" : "Audio"} call from {incomingCall.senderName || incomingCall.senderId || "Someone"}
+            </p>
+            <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
+              <button 
+                onClick={acceptGlobalCall}
+                style={{ padding: "10px 20px", background: "#10b981", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}>
+                Accept
+              </button>
+              <button 
+                onClick={declineGlobalCall}
+                style={{ padding: "10px 20px", background: "#ef4444", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}>
+                Decline
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </aside>
   );
 };
