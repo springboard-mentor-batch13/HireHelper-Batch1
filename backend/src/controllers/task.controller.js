@@ -300,7 +300,7 @@ async function getFeedTasks(req, res) {
     );
 
     const creators = await User.find({ id: { $in: creatorIds } })
-      .select("id first_name last_name profile_picture")
+      .select("id first_name last_name profile_picture ratingAvg ratingCount")
       .lean();
 
     const creatorsById = {};

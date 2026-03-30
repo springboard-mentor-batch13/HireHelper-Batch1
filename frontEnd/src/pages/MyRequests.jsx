@@ -50,8 +50,7 @@ const MyRequests = () => {
   return (
     <div className="my-requests-page">
       <div className="my-requests-header">
-        <h2>My Requests</h2>
-        <span className="my-requests-count">{requests.length} sent</span>
+        <h2>Tasks I'm Helping With</h2>
       </div>
 
       {loading && (

@@ -9,8 +9,10 @@ import InboxIcon from "@mui/icons-material/MoveToInbox";
 import SendIcon from "@mui/icons-material/Send";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { api, setToken } from "../lib/api";
+import UserRating from "./UserRating";
 import "./Sidebar.css";
 import { useEffect, useState } from "react";
+import { getSocket } from "../lib/socket";
 
 const Sidebar = () => {
   // ✅ FIX: Only ONE useState (with initializer)
@@ -34,6 +36,29 @@ const Sidebar = () => {
 
     return () => {
       window.removeEventListener("user-updated", handleUserUpdate);
+    };
+  }, []);
+
+  // ✅ Listen for real-time rating updates
+  useEffect(() => {
+    const socket = getSocket();
+    
+    const handleRatingUpdated = (data) => {
+      setUser((prevUser) => {
+        const updatedUser = {
+          ...prevUser,
+          ratingAvg: data.ratingAvg,
+          ratingCount: data.ratingCount,
+        };
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+        return updatedUser;
+      });
+    };
+
+    socket.on("rating_updated", handleRatingUpdated);
+    
+    return () => {
+      socket.off("rating_updated", handleRatingUpdated);
     };
   }, []);
 
@@ -63,11 +88,6 @@ const Sidebar = () => {
       <div className="sidebar-logo">HireHelper</div>
 
       <nav className="sidebar-menu">
-        <NavLink to="/dashboard" className="menu-item">
-          <DashboardIcon />
-          <span>Dashboard</span>
-        </NavLink>
-
         <NavLink to="/feed" className="menu-item">
           <FeedIcon />
           <span>Feed</span>
@@ -100,47 +120,60 @@ const Sidebar = () => {
       </nav>
 
       <div className="sidebar-bottom">
-        <NavLink to="/profile" className="profile-link">
+        <NavLink to="/settings" className="profile-link">
           {user?.profile_picture ? (
             <img
               src={user.profile_picture}
               alt="Profile"
               style={{
-                width: "32px",
-                height: "32px",
-                borderRadius: "50%",
+                width: "48px",
+                height: "48px",
+                objectFit: "cover",
+                borderRadius: "8px",
               }}
             />
           ) : (
             <div
               style={{
-                width: "32px",
-                height: "32px",
-                borderRadius: "50%",
+                width: "48px",
+                height: "48px",
+                borderRadius: "8px",
                 background: "#2563eb",
                 color: "#fff",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 fontWeight: "600",
+                fontSize: "20px",
               }}
             >
               {initial}
             </div>
           )}
 
-          <div>
-            <div style={{ fontSize: "14px", fontWeight: "600" }}>
+          <div className="profile-info" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <div className="profile-text" style={{ fontSize: "14px", fontWeight: "600" }}>
               {user?.first_name} {user?.last_name}
             </div>
-            <div style={{ fontSize: "12px", color: "#cbd5f5" }}>
+            <div className="profile-text" style={{ fontSize: "11px", color: "rgba(255,255,255,0.5)" }}>
               {user?.email_id}
+            </div>
+            <div style={{ transform: "scale(0.7)", transformOrigin: "left center", marginTop: "-2px" }}>
+              <UserRating 
+                rating={user?.ratingAvg} 
+                count={user?.ratingCount} 
+                size="small"
+                showCount={true}
+              />
             </div>
           </div>
         </NavLink>
+      </div>
 
+      <div className="sidebar-footer">
         <div className="logout-btn" onClick={handleLogout}>
           <LogoutIcon />
+          <span>Logout</span>
         </div>
       </div>
     </aside>

@@ -1,4 +1,10 @@
 const { User } = require("../models/User");
+const { 
+  generateSecret, 
+  verify: verifyTOTP, 
+  generateURI: generateTOTPURI 
+} = require("otplib");
+const qrcode = require("qrcode");
 const { signAuthToken, authCookieOptions } = require("../utils/jwt");
 const {
   generateOtpCode,
@@ -110,6 +116,15 @@ async function login(req, res, next) {
       return res.status(403).json({
         message: "Email not verified. Please verify OTP.",
         requiresOtp: true,
+      });
+    }
+
+    // 2FA CHECK
+    if (user.two_factor_enabled) {
+      return res.json({
+        message: "2FA Required",
+        requires2FA: true,
+        userId: user.id,
       });
     }
 
@@ -327,6 +342,103 @@ async function resetPassword(req, res, next) {
   }
 }
 
+// ─── 2FA Implementation ───────────────────────────────────────────────────────
+
+async function generate2FA(req, res, next) {
+  try {
+    const user = await User.findOne({ id: req.user.id }).select("+two_factor_secret");
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    let secret = user.two_factor_secret;
+    if (!secret) {
+      secret = generateSecret();
+      user.two_factor_secret = secret;
+      await user.save();
+    }
+
+    const otpauth = generateTOTPURI({ 
+      secret, 
+      label: user.email_id, 
+      issuer: "HireHelper" 
+    });
+    const qrCodeUrl = await qrcode.toDataURL(otpauth);
+
+    return res.json({
+      secret,
+      qrCodeUrl,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function verify2FA(req, res, next) {
+  try {
+    const { token } = req.body || {};
+    if (!token) return res.status(400).json({ message: "Code required" });
+
+    const user = await User.findOne({ id: req.user.id }).select("+two_factor_secret");
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const isValid = verifyTOTP({ token, secret: user.two_factor_secret });
+    if (!isValid) return res.status(400).json({ message: "Invalid 2FA code" });
+
+    user.two_factor_enabled = true;
+    await user.save();
+
+    return res.json({ message: "2FA enabled successfully" });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function disable2FA(req, res, next) {
+  try {
+    const { password } = req.body || {};
+    if (!password) return res.status(400).json({ message: "Password required" });
+
+    const user = await User.findOne({ id: req.user.id }).select("+password");
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) return res.status(401).json({ message: "Unauthorised" });
+
+    user.two_factor_enabled = false;
+    user.two_factor_secret = "";
+    await user.save();
+
+    return res.json({ message: "2FA disabled" });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function verify2FALogin(req, res, next) {
+  try {
+    const { userId, token } = req.body || {};
+    if (!userId || !token) {
+      return res.status(400).json({ message: "Missing info" });
+    }
+
+    const user = await User.findOne({ id: userId }).select("+two_factor_secret");
+    if (!user || !user.two_factor_enabled) {
+      return res.status(401).json({ message: "Invalid request" });
+    }
+
+    const isValid = verifyTOTP({ token, secret: user.two_factor_secret });
+    if (!isValid) return res.status(401).json({ message: "Invalid code" });
+
+    const authToken = setAuthCookie(res, user.id);
+    return res.json({
+      message: "Logged in",
+      token: authToken,
+      user: user.toSafeJSON(),
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   register,
   login,
@@ -337,4 +449,8 @@ module.exports = {
   forgotPassword,
   verifyResetOtp,
   resetPassword,
+  generate2FA,
+  verify2FA,
+  disable2FA,
+  verify2FALogin,
 };

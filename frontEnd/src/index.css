@@ -5,11 +5,64 @@
 }
 
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+  
+  /* DEFAULT LIGHT THEME (Ocean Blue) */
+  --bg-app: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-sidebar: linear-gradient(180deg, #0f172a, #020617);
+  --bg-topbar: #ffffff;
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  --text-inverse: #ffffff;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --border: #f1f5f9;
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme='dark'] {
+  --bg-app: #0f172a;
+  --bg-card: #1e293b;
+  --bg-sidebar: #020617; /* Darker than app background for contrast */
+  --bg-topbar: #1e293b;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --accent: #3b82f6;
+  --accent-hover: #60a5fa;
+  --border: #334155;
+}
+
+[data-theme='midnight'] {
+  --bg-app: #050117;
+  --bg-card: #15093b;
+  --bg-sidebar: #1e114f;
+  --bg-topbar: #15093b;
+  --text-main: #e0e7ff;
+  --text-muted: #a5b4fc;
+  --accent: #818cf8;
+  --accent-hover: #a5b4fc;
+  --border: #1e114f;
+}
+
+[data-theme='amethyst'] {
+  --bg-app: #fbfaff;
+  --bg-card: #ffffff;
+  --bg-sidebar: #1e1b4b;
+  --bg-topbar: #ffffff;
+  --text-main: #1e1b4b;
+  --text-muted: #6d6a9c;
+  --accent: #7c3aed;
+  --accent-hover: #6d28d9;
+  --border: #ede9fe;
+}
+
+:root {
+  font-family: var(--font-main);
   line-height: 1.5;
   font-weight: 400;
-  color: #213547;
-  background-color: #ffffff;
+  color: var(--text-main);
+  background-color: var(--bg-app);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -25,4 +78,35 @@ body {
 #root {
   width: 100%;
   min-height: 100vh;
+}
+
+/* MUI Global Theme Overrides */
+.MuiInputBase-root {
+  color: var(--text-main) !important;
+}
+.MuiInputLabel-root {
+  color: var(--text-muted) !important;
+}
+.MuiOutlinedInput-notchedOutline {
+  border-color: var(--border) !important;
+}
+.MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: var(--accent) !important;
+}
+.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.MuiInputBase-input::placeholder {
+  color: var(--text-muted) !important;
+  opacity: 0.6 !important;
+}
+.MuiSvgIcon-root {
+  color: inherit;
+}
+.MuiButton-contained {
+  background-color: var(--accent) !important;
+}
+.MuiButton-contained:hover {
+  background-color: var(--accent-hover) !important;
 }

@@ -7,6 +7,7 @@ const taskRouter = require("./routes/task.routes");
 const requestRouter = require("./routes/request.routes");
 const { notFoundHandler, errorHandler } = require("./middleware/errors");
 const userRoutes = require("./routes/user.routes");
+const reviewRouter = require("./routes/review.routes");
 
 
 function createApp() {
@@ -37,6 +38,7 @@ function createApp() {
 
   const chatRoutes = require("./routes/chatRoutes");
   app.use("/api/chat", chatRoutes);
+  app.use("/api/reviews", reviewRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

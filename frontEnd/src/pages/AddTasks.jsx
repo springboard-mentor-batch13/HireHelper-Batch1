@@ -1,10 +1,13 @@
 import { useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { TextField, Button } from "@mui/material";
+import { TextField, Button, Box, Typography, InputAdornment } from "@mui/material";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import TitleIcon from "@mui/icons-material/Title";
+import CameraAltIcon from "@mui/icons-material/CameraAlt";
+import EventNoteIcon from "@mui/icons-material/EventNote";
 import { toast } from "react-toastify";
 import { api } from "../lib/api";
 import "./AddTasks.css";
@@ -26,6 +29,12 @@ const AddTask = () => {
     () => title.trim() && location.trim() && startTime && !loading,
     [title, location, startTime, loading]
   );
+
+  const progress = useMemo(() => {
+    const fields = [title, description, location, startTime, endTime, picture];
+    const filledCount = fields.filter((f) => !!f).length;
+    return Math.floor((filledCount / fields.length) * 100);
+  }, [title, description, location, startTime, endTime, picture]);
 
   function handlePictureChange(e) {
     const file = e.target.files?.[0];
@@ -58,35 +67,23 @@ const AddTask = () => {
       setLoading(true);
 
       const formData = new FormData();
-
-      // ✅ IMPORTANT: field names must match backend EXACTLY
       formData.append("title", title.trim());
       formData.append("description", description.trim());
       formData.append("location", location.trim());
-      formData.append("startTime", startTime); // ✅ FIXED
+      formData.append("startTime", startTime);
       if (endTime) {
-        formData.append("endTime", endTime); // ✅ FIXED
+        formData.append("endTime", endTime);
       }
 
       if (picture) {
         formData.append("picture", picture);
       }
 
-      // ✅ DEBUG (very important)
-      console.log("---- FORM DATA ----");
-      for (let pair of formData.entries()) {
-        console.log(pair[0], pair[1]);
-      }
-
-      const res = await api.upload("/api/tasks", formData);
-
-      console.log("✅ TASK CREATED:", res);
-
+      await api.upload("/api/tasks", formData);
       toast.success("Task created successfully!");
       navigate("/my-tasks");
 
     } catch (err) {
-      console.error("❌ TASK CREATE ERROR:", err);
       toast.error(err?.data?.message || err.message);
     } finally {
       setLoading(false);
@@ -95,64 +92,139 @@ const AddTask = () => {
 
   return (
     <div className="add-task-page">
-      <h2>Create a New Task</h2>
-      <p className="add-task-subtitle">
-        Fill out the details below to post a task for helpers.
-      </p>
+      <div className="add-task-header">
+        <h2>Create a New Task</h2>
+        <p className="add-task-subtitle">
+          Fill out the details below to post a task for helpers in your area.
+        </p>
+      </div>
 
-      <div className="add-task-card">
-        <form onSubmit={handleSubmit}>
-
-          {/* Details */}
-          <div className="form-section">
-            <div className="form-section-label">
-              <InfoOutlinedIcon /> Details
-            </div>
-            <div className="form-fields">
-              <TextField
-                fullWidth
-                label="Title"
-                required
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                disabled={loading}
-              />
-              <TextField
-                fullWidth
-                label="Description"
-                multiline
-                minRows={3}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                disabled={loading}
-              />
-            </div>
+      <form onSubmit={handleSubmit} className="add-task-sections">
+        {/* Row 1: Details & Photo */}
+        <div className="add-task-card">
+          <div className="card-section-header">
+            <InfoOutlinedIcon /> Task Details
           </div>
 
-          {/* Location */}
-          <div className="form-section">
-            <div className="form-section-label">
-              <LocationOnIcon /> Location
-            </div>
+          <div className="field-group">
+            <label className="field-label">Title <span className="required">*</span></label>
             <TextField
               fullWidth
-              label="Location"
+              placeholder="Help with moving groceries"
+              required
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              disabled={loading}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </div>
+
+          <div className="field-group">
+            <label className="field-label">Description</label>
+            <TextField
+              fullWidth
+              placeholder="Describe what help you need in detail..."
+              multiline
+              minRows={4}
+              maxRows={8}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              disabled={loading}
+            />
+          </div>
+        </div>
+
+        <div className="add-task-card">
+          <div className="card-section-header">
+            <CameraAltIcon /> Task Photo
+          </div>
+          <Typography variant="body2" sx={{ color: "var(--text-muted)", mb: 2, lineHeight: 1.6 }}>
+            Adding a photo helps helpers understand the task better and increases your chances of getting help.
+          </Typography>
+
+          <input
+            ref={fileRef}
+            type="file"
+            hidden
+            accept="image/*"
+            onChange={handlePictureChange}
+          />
+
+          <div
+            className={`upload-area ${preview ? "has-preview" : ""}`}
+            onClick={() => !preview && fileRef.current?.click()}
+          >
+            {!preview ? (
+              <div className="upload-placeholder">
+                <div className="upload-icon-wrapper">
+                  <CloudUploadIcon />
+                </div>
+                <p><span>Click here to upload</span> or drag and drop</p>
+                <p className="upload-support-text">
+                  PNG, JPG or WEBP (Max. 5MB)
+                </p>
+              </div>
+            ) : (
+              <div className="preview-wrapper">
+                <img src={preview} alt="Preview" className="picture-preview" />
+                <button
+                  type="button"
+                  className="remove-preview"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removePicture();
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+            )}
+          </div>
+
+          </div>
+
+        {/* Row 2: Location & Notes */}
+        <div className="add-task-card">
+          <div className="card-section-header">
+            <EventNoteIcon /> Location & Schedule
+          </div>
+
+          <div className="field-group">
+            <label className="field-label">
+              <LocationOnIcon sx={{ fontSize: 16, verticalAlign: 'text-bottom', mr: 0.5 }} />
+              Location <span className="required">*</span>
+            </label>
+            <TextField
+              fullWidth
+              placeholder="e.g., Brigade Road, Bangalore"
               required
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               disabled={loading}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LocationOnIcon sx={{ fontSize: 20, opacity: 0.4 }} />
+                  </InputAdornment>
+                ),
+              }}
             />
           </div>
 
-          {/* Schedule */}
-          <div className="form-section">
-            <div className="form-section-label">
-              <AccessTimeIcon /> Schedule
-            </div>
+          <div className="field-group">
+            <label className="field-label">
+              <AccessTimeIcon sx={{ fontSize: 16, verticalAlign: 'text-bottom', mr: 0.5 }} />
+              Time
+            </label>
             <div className="time-row">
               <TextField
                 fullWidth
-                label="Start Time"
+                label="Start Time *"
                 type="datetime-local"
                 required
                 value={startTime}
@@ -171,68 +243,47 @@ const AddTask = () => {
               />
             </div>
           </div>
+        </div>
 
-          {/* Picture */}
-          <div className="form-section">
-            <div className="form-section-label">
-              <CloudUploadIcon /> Picture
-            </div>
-
-            <input
-              ref={fileRef}
-              type="file"
-              hidden
-              accept="image/*"
-              onChange={handlePictureChange}
-            />
-
-            <div
-              className={`upload-area ${preview ? "has-preview" : ""}`}
-              onClick={() => !preview && fileRef.current?.click()}
-            >
-              {!preview ? (
-                <div className="upload-placeholder">
-                  <CloudUploadIcon />
-                  <p><span>Click to upload</span> an image</p>
-                </div>
-              ) : (
-                <div className="preview-wrapper">
-                  <img src={preview} alt="Preview" className="picture-preview" />
-                  <button
-                    type="button"
-                    className="remove-preview"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removePicture();
-                    }}
-                  >
-                    ×
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {picture && <p className="preview-filename">{picture.name}</p>}
+        <div className="add-task-card notes-card">
+          <div className="card-section-header">
+            <InfoOutlinedIcon /> Important Notes
           </div>
+          <ul className="notes-list">
+            <li>Be <strong>specific</strong> about what help you need — vague tasks get fewer responses.</li>
+            <li>Include a <strong>fair budget</strong> in your description to attract quality helpers.</li>
+            <li>Adding a <strong>photo</strong> increases your chances of getting help by 3×.</li>
+            <li>Set a <strong>realistic time</strong> — helpers need time to prepare and travel.</li>
+            <li>Your <strong>location</strong> helps match nearby helpers for faster assistance.</li>
+          </ul>
+        </div>
 
-          <Button
-            type="submit"
-            variant="contained"
-            fullWidth
-            disabled={!canSubmit}
-            sx={{
-              py: 1.5,
-              fontWeight: 600,
-              fontSize: 15,
-              textTransform: "none",
-              borderRadius: "8px",
-              mt: 1,
-            }}
-          >
-            {loading ? "Creating Task..." : "Create Task"}
-          </Button>
-        </form>
-      </div>
+        {/* Row 3: Progress & Submit Button */}
+        <div className="add-task-footer-progress">
+          <div className="progress-section">
+            <div className="progress-label">
+              <span>Form Completeness</span>
+              <span className="progress-percent">{progress}%</span>
+            </div>
+            <div className={`progress-bar-container ${progress === 0 ? 'is-empty' : ''}`}>
+              <div 
+                className="progress-bar-fill" 
+                style={{ width: `${progress}%` }}
+              ></div>
+            </div>
+          </div>
+        </div>
+
+        <Button
+          type="submit"
+          variant="contained"
+          fullWidth
+          className="create-task-btn"
+          disabled={!canSubmit}
+        >
+          {loading ? "Creating Task..." : "🚀 Post Task Now"}
+        </Button>
+      </form>
     </div>
   );
 };

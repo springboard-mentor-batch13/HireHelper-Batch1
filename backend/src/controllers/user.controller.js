@@ -35,8 +35,6 @@ const updateProfile = async (req, res) => {
     if (req.body.phone_number !== undefined)
       updateData.phone_number = req.body.phone_number;
 
-    if (req.body.bio !== undefined)
-      updateData.bio = req.body.bio;
 
     
     if (isRemove) {

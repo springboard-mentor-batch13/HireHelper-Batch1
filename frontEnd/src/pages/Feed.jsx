@@ -6,6 +6,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import { api } from "../lib/api";
 import { getSocket } from "../lib/socket";
 import { toast } from "react-toastify";
+import UserRating from "../components/UserRating";
 import "./Feed.css";
 
 function formatDate(dateStr) {
@@ -89,7 +90,7 @@ const Feed = () => {
       {/* Header */}
       <div className="feed-header">
         <div>
-          <h2 className="feed-title">Feed</h2>
+          <h2 className="feed-title">Explore Available Tasks</h2>
           <p className="feed-subtitle">Find tasks that need help</p>
         </div>
         <div className="feed-search">
@@ -170,9 +171,11 @@ const Feed = () => {
                           <PersonIcon fontSize="small" />
                         </div>
                       )}
-                      <span>
-                        {task.createdBy?.first_name || "Task owner"}
-                      </span>
+                      <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                        <span style={{ fontWeight: 600 }}>
+                          {task.createdBy?.first_name || "Task owner"}
+                        </span>
+                      </div>
                     </div>
 
                     <button
