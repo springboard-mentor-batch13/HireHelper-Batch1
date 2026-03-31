@@ -4,8 +4,6 @@
 
 .add-task-page {
   width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
   box-sizing: border-box;
   font-family: var(--font-main);
   color: var(--text-main);
@@ -17,10 +15,7 @@
 /* ── HEADER ────────────────────────────────── */
 .add-task-header {
   margin-bottom: 32px;
-  text-align: center;
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
+  text-align: left; /* Aligned left to match My Tasks header style */
   animation: fadeInDown 0.6s ease-out;
 }
 
@@ -44,15 +39,41 @@
   line-height: 1.6;
 }
 
-/* ── FOOLPROOF 1-COLUMN LAYOUT ──────────────── */
+/* ── DYNAMIC LAYOUT ────────────────────────── */
 .add-task-sections {
-  display: flex !important;
-  flex-direction: column !important;
+  display: grid;
   gap: 32px;
   width: 100%;
-  max-width: 720px;
   margin: 0 auto 40px;
   padding: 0 4px;
+}
+
+/* Desktop: 2-Column Grid (Task Details & Location Left, Photo & Notes Right) */
+@media (min-width: 1025px) {
+  .add-task-sections {
+    grid-template-columns: 1.1fr 0.9fr; /* Left side slightly wider for the form */
+    width: 100%;
+    /* Default align-items is stretch, which ensures cards in the same row match heights */
+  }
+
+  .details-card { grid-column: 1; grid-row: 1; }
+  .photo-card { grid-column: 2; grid-row: 1; }
+  .location-card { grid-column: 1; grid-row: 2; }
+  .notes-card { grid-column: 2; grid-row: 2; }
+
+  .add-task-footer-progress,
+  .create-task-btn {
+    grid-column: 1 / span 2;
+  }
+}
+
+/* Mobile & Tablet: 1-Column Stack */
+@media (max-width: 1024px) {
+  .add-task-sections {
+    display: flex;
+    flex-direction: column;
+    max-width: 720px;
+  }
 }
 
 /* ── PREMIUM CARDS ──────────────────────────── */
