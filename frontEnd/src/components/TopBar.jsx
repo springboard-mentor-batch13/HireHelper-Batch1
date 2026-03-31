@@ -1,11 +1,12 @@
 import { useEffect, useState, useRef } from "react";
 import { IconButton, Badge } from "@mui/material";
 import NotificationsIcon from "@mui/icons-material/Notifications";
+import MenuIcon from "@mui/icons-material/Menu";
 import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 import "./TopBar.css";
 
-const TopBar = ({ title }) => {
+const TopBar = ({ title, toggleMenu }) => {
   const [notifications, setNotifications] = useState([]);
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -72,7 +73,16 @@ const TopBar = ({ title }) => {
 
   return (
     <div className="topbar">
-      <h1 className="topbar-title">{title}</h1>
+      <div className="topbar-left">
+        <IconButton
+          className="mobile-menu-btn"
+          onClick={toggleMenu}
+          sx={{ display: { xs: "inline-flex", md: "none" }, mr: 1, color: "var(--text-main)" }}
+        >
+          <MenuIcon />
+        </IconButton>
+        <h1 className="topbar-title">{title}</h1>
+      </div>
 
       <div className="topbar-right" ref={dropdownRef}>
         <IconButton onClick={handleOpen} size="small">

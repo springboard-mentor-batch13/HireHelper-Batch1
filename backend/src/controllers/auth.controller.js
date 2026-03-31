@@ -1,9 +1,5 @@
 const { User } = require("../models/User");
-const { 
-  generateSecret, 
-  verify: verifyTOTP, 
-  generateURI: generateTOTPURI 
-} = require("otplib");
+const { authenticator } = require("otplib");
 const qrcode = require("qrcode");
 const { signAuthToken, authCookieOptions } = require("../utils/jwt");
 const {
@@ -351,16 +347,12 @@ async function generate2FA(req, res, next) {
 
     let secret = user.two_factor_secret;
     if (!secret) {
-      secret = generateSecret();
+      secret = authenticator.generateSecret();
       user.two_factor_secret = secret;
       await user.save();
     }
 
-    const otpauth = generateTOTPURI({ 
-      secret, 
-      label: user.email_id, 
-      issuer: "HireHelper" 
-    });
+    const otpauth = authenticator.keyuri(user.email_id, "HireHelper", secret);
     const qrCodeUrl = await qrcode.toDataURL(otpauth);
 
     return res.json({
@@ -380,7 +372,7 @@ async function verify2FA(req, res, next) {
     const user = await User.findOne({ id: req.user.id }).select("+two_factor_secret");
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    const isValid = verifyTOTP({ token, secret: user.two_factor_secret });
+    const isValid = authenticator.verify({ token, secret: user.two_factor_secret });
     if (!isValid) return res.status(400).json({ message: "Invalid 2FA code" });
 
     user.two_factor_enabled = true;
@@ -425,7 +417,7 @@ async function verify2FALogin(req, res, next) {
       return res.status(401).json({ message: "Invalid request" });
     }
 
-    const isValid = verifyTOTP({ token, secret: user.two_factor_secret });
+    const isValid = authenticator.verify({ token, secret: user.two_factor_secret });
     if (!isValid) return res.status(401).json({ message: "Invalid code" });
 
     const authToken = setAuthCookie(res, user.id);

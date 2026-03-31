@@ -15,7 +15,7 @@ import "./Sidebar.css";
 import { useEffect, useState } from "react";
 import { getSocket } from "../lib/socket";
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen, closeMenu }) => {
   // ✅ FIX: Only ONE useState (with initializer)
   const [user, setUser] = useState(() => {
     const storedUser = localStorage.getItem("user");
@@ -124,43 +124,43 @@ const Sidebar = () => {
   };
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${isOpen ? "open" : ""}`}>
       <div className="sidebar-logo">HireHelper</div>
 
       <nav className="sidebar-menu">
-        <NavLink to="/feed" className="menu-item">
+        <NavLink to="/feed" className="menu-item" onClick={closeMenu}>
           <FeedIcon />
           <span>Feed</span>
         </NavLink>
 
-        <NavLink to="/my-tasks" className="menu-item">
+        <NavLink to="/my-tasks" className="menu-item" onClick={closeMenu}>
           <TaskIcon />
           <span>My Tasks</span>
         </NavLink>
 
-        <NavLink to="/add-task" className="menu-item">
+        <NavLink to="/add-task" className="menu-item" onClick={closeMenu}>
           <AddIcon />
           <span>Add Task</span>
         </NavLink>
 
-        <NavLink to="/requests" className="menu-item">
+        <NavLink to="/requests" className="menu-item" onClick={closeMenu}>
           <InboxIcon />
           <span>Requests</span>
         </NavLink>
 
-        <NavLink to="/my-requests" className="menu-item">
+        <NavLink to="/my-requests" className="menu-item" onClick={closeMenu}>
           <SendIcon />
           <span>My Requests</span>
         </NavLink>
 
-        <NavLink to="/settings" className="menu-item">
+        <NavLink to="/settings" className="menu-item" onClick={closeMenu}>
           <SettingsIcon />
           <span>Settings</span>
         </NavLink>
       </nav>
 
       <div className="sidebar-bottom">
-        <NavLink to="/settings" className="profile-link">
+        <NavLink to="/settings" className="profile-link" onClick={closeMenu}>
           {user?.profile_picture ? (
             <img
               src={user.profile_picture}

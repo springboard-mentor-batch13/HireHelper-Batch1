@@ -1,5 +1,9 @@
 function notFoundHandler(req, res) {
-  res.status(404).json({ message: "Not found" });
+  res.status(404).json({ 
+    message: "Route not found",
+    method: req.method,
+    url: req.originalUrl 
+  });
 }
 
 // eslint-disable-next-line no-unused-vars

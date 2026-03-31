@@ -21,8 +21,12 @@ export const getSocket = () => {
 
   if (!socket) {
     socket = io(API_BASE_URL, {
-      transports: ["websocket"],
+      transports: ["polling", "websocket"],
       auth: { userId },
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
+      timeout: 20000,
     });
 
     socket.on("connect", () => {

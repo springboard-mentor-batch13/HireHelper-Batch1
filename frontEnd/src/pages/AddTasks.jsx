@@ -100,8 +100,7 @@ const AddTask = () => {
       </div>
 
       <form onSubmit={handleSubmit} className="add-task-sections">
-        {/* Row 1: Details & Photo */}
-        <div className="add-task-card">
+        <div className="add-task-card details-card">
           <div className="card-section-header">
             <InfoOutlinedIcon /> Task Details
           </div>
@@ -139,7 +138,7 @@ const AddTask = () => {
           </div>
         </div>
 
-        <div className="add-task-card">
+        <div className="add-task-card photo-card">
           <div className="card-section-header">
             <CameraAltIcon /> Task Photo
           </div>
@@ -188,8 +187,7 @@ const AddTask = () => {
 
           </div>
 
-        {/* Row 2: Location & Notes */}
-        <div className="add-task-card">
+        <div className="add-task-card location-card">
           <div className="card-section-header">
             <EventNoteIcon /> Location & Schedule
           </div>
@@ -258,7 +256,6 @@ const AddTask = () => {
           </ul>
         </div>
 
-        {/* Row 3: Progress & Submit Button */}
         <div className="add-task-footer-progress">
           <div className="progress-section">
             <div className="progress-label">
