@@ -13,6 +13,17 @@
   z-index: 10;
 }
 
+@media (max-width: 640px) {
+  .topbar {
+    padding: 0 16px;
+  }
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+}
+
 .topbar-title {
   font-size: 18px;
   font-weight: 700;

@@ -305,13 +305,17 @@
 
 @media (max-width: 768px) {
   .chat-card {
-    height: calc(100vh - 116px);
-    max-height: calc(100vh - 116px);
+    height: calc(100vh - 100px);
+    max-height: calc(100vh - 100px);
     border-radius: 14px;
   }
 
   .message-bubble {
     max-width: 86%;
+  }
+
+  .chat-header h2 {
+    font-size: 18px;
   }
 }
 

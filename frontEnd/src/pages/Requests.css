@@ -168,4 +168,7 @@
   .requests-page {
     padding: 12px 16px;
   }
+  .requests-list {
+    grid-template-columns: 1fr;
+  }
 }

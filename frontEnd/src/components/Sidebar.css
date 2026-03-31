@@ -13,6 +13,17 @@
   overflow: hidden;
   box-shadow: 4px 0 20px rgba(0,0,0,0.15);
   border-right: 1px solid rgba(255,255,255,0.05);
+  transition: transform 0.3s ease;
+  z-index: 50;
+}
+
+@media (max-width: 992px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+  .sidebar.open {
+    transform: translateX(0);
+  }
 }
 
 .sidebar-logo {

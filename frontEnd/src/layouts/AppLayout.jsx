@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import TopBar from "../components/TopBar";
@@ -19,6 +19,7 @@ const pageTitles = {
 const AppLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const title = pageTitles[location.pathname] || "HireHelper";
 
   useEffect(() => {
@@ -81,9 +82,12 @@ const AppLayout = () => {
 
   return (
     <div className="app-layout">
-      <Sidebar />
+      {isMobileMenuOpen && (
+        <div className="mobile-overlay" onClick={() => setIsMobileMenuOpen(false)}></div>
+      )}
+      <Sidebar isOpen={isMobileMenuOpen} closeMenu={() => setIsMobileMenuOpen(false)} />
       <main className="app-content">
-        <TopBar title={title} />
+        <TopBar title={title} toggleMenu={() => setIsMobileMenuOpen(true)} />
         <div className="app-page">
           <Outlet />
         </div>

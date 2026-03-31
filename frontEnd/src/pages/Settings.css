@@ -417,4 +417,10 @@
   .form-row {
     grid-template-columns: 1fr;
   }
+  .theme-options-grid {
+    grid-template-columns: 1fr;
+  }
+  .card {
+    padding: 16px;
+  }
 }
