@@ -6,7 +6,7 @@ require("dotenv").config({
   path: path.join(__dirname, "..", ".env"),
 });
 
-const { createApp } = require("./app");
+const app = require("./app");
 const { connectDb } = require("./config/db");
 
 
@@ -37,18 +37,52 @@ function formatMessagePayload(messageDoc) {
   };
 }
 
+async function emitToTaskRecipients(io, taskId, senderId, eventName, data) {
+  if (!taskId) return;
+  try {
+    const [task, acceptedRequests] = await Promise.all([
+      Task.findById(taskId).lean(),
+      Request.find({ task: taskId, status: "accepted" }).lean(),
+    ]);
+
+    if (!task) return;
+
+    const recipientIds = new Set();
+    if (task.createdBy && String(task.createdBy) !== String(senderId)) {
+      recipientIds.add(task.createdBy);
+    }
+
+    for (const req of acceptedRequests || []) {
+      if (req.helper && String(req.helper) !== String(senderId)) {
+        recipientIds.add(req.helper);
+      }
+    }
+
+    // Emit to specific user rooms (global listeners)
+    for (const userId of recipientIds) {
+      io.to(`user:${userId}`).emit(eventName, data);
+    }
+  } catch (err) {
+    console.error(`❌ Error emitting ${eventName} to recipients:`, err);
+  }
+}
+
 async function main() {
   try {
     await connectDb(process.env.MONGO_URI);
 
-    const app = createApp();
     const port = Number(process.env.PORT || 5000);
 
     const server = http.createServer(app);
 
+    const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:5173")
+      .split(",")
+      .map(o => o.trim());
+
     const io = new Server(server, {
       cors: {
-        origin: "*",
+        origin: allowedOrigins,
+        credentials: true,
         methods: ["GET", "POST"],
       },
     });
@@ -248,6 +282,31 @@ async function main() {
         } catch (err) {
           console.error("❌ React message error:", err);
         }
+      });
+
+      // WEBRTC SIGNALING FOR CALLS
+      socket.on("webrtc_offer", async (data) => {
+        socket.to(`task:${data.taskId}`).emit("webrtc_offer", data);
+        const senderId = socket.data.userId || data?.senderId;
+        await emitToTaskRecipients(io, data.taskId, senderId, "webrtc_offer", data);
+      });
+
+      socket.on("webrtc_answer", async (data) => {
+        socket.to(`task:${data.taskId}`).emit("webrtc_answer", data);
+        const senderId = socket.data.userId || data?.senderId;
+        await emitToTaskRecipients(io, data.taskId, senderId, "webrtc_answer", data);
+      });
+
+      socket.on("webrtc_ice_candidate", async (data) => {
+        socket.to(`task:${data.taskId}`).emit("webrtc_ice_candidate", data);
+        const senderId = socket.data.userId || data?.senderId;
+        await emitToTaskRecipients(io, data.taskId, senderId, "webrtc_ice_candidate", data);
+      });
+
+      socket.on("end_call", async (data) => {
+        socket.to(`task:${data.taskId}`).emit("end_call", data);
+        const senderId = socket.data.userId || data?.senderId;
+        await emitToTaskRecipients(io, data.taskId, senderId, "end_call", data);
       });
 
       socket.on("disconnect", () => {

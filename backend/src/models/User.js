@@ -29,13 +29,19 @@ const UserSchema = new mongoose.Schema(
     password: { type: String, required: true, select: false },
 
     profile_picture: { type: String, default: "" },
-    bio: { type: String, default: "" },
+
 
     is_email_verified: { type: Boolean, default: false },
     otp_code_hash: { type: String, default: "", select: false },
     otp_expires_at: { type: Date, default: null },
     otp_last_sent_at: { type: Date, default: null },
     otp_attempts: { type: Number, default: 0 },
+
+    ratingAvg: { type: Number, default: 0 },
+    ratingCount: { type: Number, default: 0 },
+
+    two_factor_secret: { type: String, default: "", select: false },
+    two_factor_enabled: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
@@ -57,8 +63,10 @@ UserSchema.methods.toSafeJSON = function () {
     phone_number: this.phone_number,
     email_id: this.email_id,
     profile_picture: this.profile_picture,
-    bio: this.bio || "",
     is_email_verified: this.is_email_verified,
+    two_factor_enabled: this.two_factor_enabled,
+    ratingAvg: this.ratingAvg || 0,
+    ratingCount: this.ratingCount || 0,
     createdAt: this.createdAt,
     updatedAt: this.updatedAt,
   };

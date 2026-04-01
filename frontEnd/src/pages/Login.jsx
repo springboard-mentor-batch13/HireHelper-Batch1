@@ -13,6 +13,9 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [requires2FA, setRequires2FA] = useState(false);
+  const [twoFactorToken, setTwoFactorToken] = useState("");
+  const [twoFactorUserId, setTwoFactorUserId] = useState("");
 
   const canSubmit = useMemo(() => {
     return email.trim() !== "" && password !== "" && !loading;
@@ -35,6 +38,14 @@ const Login = () => {
         sessionStorage.setItem("otp_email_id", email.trim());
         toast.info("OTP verification required");
         navigate("/verify-otp");
+        return;
+      }
+
+      // ✅ 2FA FLOW
+      if (data?.requires2FA) {
+        setTwoFactorUserId(data.userId);
+        setRequires2FA(true);
+        toast.info("Two-factor authentication required");
         return;
       }
 
@@ -73,7 +84,7 @@ const Login = () => {
         // Actually navigate should be fine as it's the same domain.
         // We need to notify AppRoutes that login status changed.
         // For now, let's keep it simple.
-        navigate("/dashboard", { replace: true });
+        navigate("/feed", { replace: true });
         window.location.reload(); // re-runs /me check with persisted token
       } else {
         toast.error("Invalid login response");
@@ -86,6 +97,38 @@ const Login = () => {
         err?.message ||
         "Login failed"
       );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handle2FASubmit(e) {
+    e.preventDefault();
+    if (twoFactorToken.length !== 6) {
+      toast.warning("Please enter a 6-digit code");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const data = await api.post("/api/auth/2fa/login/verify", {
+        userId: twoFactorUserId,
+        token: twoFactorToken,
+      });
+
+      if (data?.token) {
+        setToken(data.token);
+        localStorage.setItem("isLoggedIn", "true");
+        if (data?.user) {
+          localStorage.setItem("user", JSON.stringify(data.user));
+        }
+        getSocket();
+        toast.success("Login successful");
+        navigate("/feed", { replace: true });
+        window.location.reload();
+      }
+    } catch (err) {
+      toast.error(err?.data?.message || "Invalid 2FA code");
     } finally {
       setLoading(false);
     }
@@ -104,54 +147,30 @@ const Login = () => {
     <div style={styles.container}>
       <div style={styles.card}>
         <div style={styles.logoMark}>H</div>
-        <h1 style={styles.title}>Welcome Back</h1>
+        <h1 style={styles.title}>{requires2FA ? "Security Check" : "Welcome Back"}</h1>
         <p style={styles.subtitle}>
-          Sign in to your HireHelper account
+          {requires2FA 
+            ? "Enter the 6-digit code from your authenticator app" 
+            : "Sign in to your HireHelper account"}
         </p>
 
-        <form onSubmit={handleSubmit}>
-          <TextField
-            fullWidth
-            label="Email"
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={loading}
-            sx={{ mb: 2 }}
-            InputProps={{
-              startAdornment: <EmailIcon sx={{ mr: 1 }} />,
-            }}
-          />
-
-          <TextField
-            fullWidth
-            label="Password"
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            disabled={loading}
-            sx={{ mb: 1 }}
-            InputProps={{
-              startAdornment: <LockIcon sx={{ mr: 1 }} />,
-            }}
-          />
-
-          <div style={{ textAlign: "right", marginBottom: 12 }}>
-            <span
-              style={styles.link}
-              onClick={() => navigate("/forgot-password")}
-            >
-              Forgot password?
-            </span>
-          </div>
-
-          <div style={{ textAlign: "center" }}>
+        {requires2FA ? (
+          <form onSubmit={handle2FASubmit}>
+            <TextField
+              fullWidth
+              label="2FA Code"
+              placeholder="000000"
+              required
+              value={twoFactorToken}
+              onChange={(e) => setTwoFactorToken(e.target.value)}
+              disabled={loading}
+              sx={{ mb: 2 }}
+              inputProps={{ maxLength: 6, style: { textAlign: 'center', letterSpacing: '4px', fontSize: '20px' } }}
+            />
             <Button
               type="submit"
               variant="contained"
-              disabled={!canSubmit}
+              disabled={loading || twoFactorToken.length !== 6}
               sx={{
                 width: "100%",
                 padding: "10px",
@@ -160,10 +179,71 @@ const Login = () => {
                 textTransform: "none",
               }}
             >
-              {loading ? "Signing In..." : "Sign In"}
+              {loading ? "Verifying..." : "Verify Code"}
             </Button>
-          </div>
-        </form>
+            <div style={{ marginTop: 15 }}>
+              <span style={styles.link} onClick={() => setRequires2FA(false)}>
+                Back to Login
+              </span>
+            </div>
+          </form>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            <TextField
+              fullWidth
+              label="Email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={loading}
+              sx={{ mb: 2 }}
+              InputProps={{
+                startAdornment: <EmailIcon sx={{ mr: 1 }} />,
+              }}
+            />
+
+            <TextField
+              fullWidth
+              label="Password"
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={loading}
+              sx={{ mb: 1 }}
+              InputProps={{
+                startAdornment: <LockIcon sx={{ mr: 1 }} />,
+              }}
+            />
+
+            <div style={{ textAlign: "right", marginBottom: 12 }}>
+              <span
+                style={styles.link}
+                onClick={() => navigate("/forgot-password")}
+              >
+                Forgot password?
+              </span>
+            </div>
+
+            <div style={{ textAlign: "center" }}>
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={!canSubmit}
+                sx={{
+                  width: "100%",
+                  padding: "10px",
+                  fontSize: "14px",
+                  borderRadius: "8px",
+                  textTransform: "none",
+                }}
+              >
+                {loading ? "Signing In..." : "Sign In"}
+              </Button>
+            </div>
+          </form>
+        )}
 
         <p style={styles.footer}>
           Don’t have an account?{" "}

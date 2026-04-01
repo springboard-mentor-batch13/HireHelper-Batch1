@@ -51,7 +51,7 @@ async function createRequest(req, res) {
       const io = req.app.get("io");
       if (io) {
         const helper = await User.findOne({ id: req.user.id })
-          .select("id first_name last_name profile_picture")
+          .select("id first_name last_name profile_picture ratingAvg ratingCount")
           .lean();
         io.to(`user:${task.createdBy}`).emit("task:requested", {
           taskId: task._id,
@@ -91,7 +91,7 @@ async function getReceivedRequests(req, res) {
     // Fetch helper info for each request
     const helperIds = [...new Set(requests.map((r) => r.helper).filter(Boolean))];
     const helpers = await User.find({ id: { $in: helperIds } })
-      .select("id first_name last_name profile_picture email_id").lean();
+      .select("id first_name last_name profile_picture email_id ratingAvg ratingCount").lean();
     const helpersById = {};
     for (const h of helpers) helpersById[h.id] = h;
 
@@ -123,7 +123,7 @@ async function getSentRequests(req, res) {
     // Fetch creator info for each task
     const creatorIds = [...new Set(tasks.map((t) => t.createdBy).filter(Boolean))];
     const creators = await User.find({ id: { $in: creatorIds } })
-      .select("id first_name last_name profile_picture").lean();
+      .select("id first_name last_name profile_picture ratingAvg ratingCount").lean();
     const creatorsById = {};
     for (const c of creators) creatorsById[c.id] = c;
 
@@ -169,6 +169,14 @@ async function updateRequestStatus(req, res) {
       { status },
       { new: true }
     );
+
+    // If accepted, update task status and helperId
+    if (status === "accepted") {
+      await Task.findByIdAndUpdate(request.task, {
+        status: "in_progress",
+        helperId: request.helper,
+      });
+    }
 
     // Notify the helper about accept/decline
     try {

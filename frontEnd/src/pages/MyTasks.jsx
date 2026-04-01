@@ -24,6 +24,7 @@ import {
   rectSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import RatingModal from "../components/RatingModal";
 import "./MyTasks.css";
 
 function formatDate(dateStr) {
@@ -203,6 +204,11 @@ const MyTasks = () => {
   const navigate = useNavigate();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Rating Modal state
+  const [ratingModalOpen, setRatingModalOpen] = useState(false);
+  const [ratingTask, setRatingTask] = useState(null);
+  const [ratingHelperName, setRatingHelperName] = useState("");
 
   const [editingTask, setEditingTask] = useState(null);
   const [editTitle, setEditTitle] = useState("");
@@ -263,6 +269,27 @@ const MyTasks = () => {
     setTasks((prev) =>
       prev.map((t) => (t._id === taskId ? { ...t, status: newStatus } : t))
     );
+
+    // If completed, trigger rating modal
+    if (newStatus === "completed") {
+      const task = tasks.find((t) => t._id === taskId);
+      if (task) {
+        // Find accepted helper name from requests OR use generic
+        const acceptedRequest = task.requests?.find((r) => r.status === "accepted");
+        let helperName = "your helper";
+        
+        if (acceptedRequest && acceptedRequest.helper) {
+          // If the helper object is populated
+          if (acceptedRequest.helper.first_name) {
+            helperName = `${acceptedRequest.helper.first_name} ${acceptedRequest.helper.last_name}`;
+          }
+        }
+        
+        setRatingTask(task);
+        setRatingHelperName(helperName);
+        setRatingModalOpen(true);
+      }
+    }
   };
 
   const openEditDialog = (task) => {
@@ -372,7 +399,7 @@ const MyTasks = () => {
   return (
     <div className="my-tasks-page">
       <div className="my-tasks-header">
-        <h2>My Tasks</h2>
+        <h2>Tasks I've Posted</h2>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
@@ -546,6 +573,14 @@ const MyTasks = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <RatingModal
+        open={ratingModalOpen}
+        onClose={() => setRatingModalOpen(false)}
+        taskId={ratingTask?._id}
+        taskTitle={ratingTask?.title}
+        helperName={ratingHelperName}
+      />
     </div>
   );
 };

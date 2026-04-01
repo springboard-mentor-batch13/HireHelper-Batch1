@@ -33,6 +33,8 @@ const AppRoutes = () => {
       if (res?.user) {
         setUser(res.user);
         setIsLoggedIn(true);
+        localStorage.setItem("user", JSON.stringify(res.user));
+        window.dispatchEvent(new Event("user-updated"));
       } else {
         setIsLoggedIn(false);
         setUser(null);
@@ -82,15 +84,15 @@ const AppRoutes = () => {
       {/* ⭐ Public Routes */}
       <Route
         path="/"
-        element={isLoggedIn ? <Navigate to="/dashboard" /> : <Landing />}
+        element={isLoggedIn ? <Navigate to="/feed" /> : <Landing />}
       />
       <Route
         path="/login"
-        element={isLoggedIn ? <Navigate to="/dashboard" /> : <Login />}
+        element={isLoggedIn ? <Navigate to="/feed" /> : <Login />}
       />
       <Route
         path="/register"
-        element={isLoggedIn ? <Navigate to="/dashboard" /> : <Register />}
+        element={isLoggedIn ? <Navigate to="/feed" /> : <Register />}
       />
       <Route path="/verify-otp" element={<VerifyOtp />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />

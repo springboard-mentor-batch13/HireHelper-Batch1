@@ -1,15 +1,14 @@
 .chat-card {
-  width: min(900px, 100%);
+  width: 100%;
   height: calc(100vh - 116px);
   max-height: calc(100vh - 116px);
-  margin: 0 auto;
-  background: #ffffff;
+  background: var(--bg-card);
   border-radius: 18px;
-  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.14);
+  box-shadow: var(--shadow);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border);
 }
 
 .chat-header {
@@ -17,19 +16,19 @@
   align-items: center;
   justify-content: space-between;
   padding: 18px 22px;
-  border-bottom: 1px solid #e2e8f0;
-  background: linear-gradient(90deg, #f8fafc, #eff6ff);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-hover);
 }
 
 .chat-header h2 {
   margin: 0;
-  color: #0f172a;
+  color: var(--text-main);
   font-size: 22px;
 }
 
 .chat-header p {
   margin: 4px 0 0;
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 13px;
 }
 
@@ -54,7 +53,7 @@
   flex: 1;
   overflow-y: auto;
   padding: 20px;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  background: var(--bg-app);
   position: relative;
 }
 
@@ -63,12 +62,12 @@
   display: grid;
   place-content: center;
   text-align: center;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .chat-empty h3 {
   margin: 0 0 6px;
-  color: #0f172a;
+  color: var(--text-main);
 }
 
 .chat-empty p {
@@ -97,15 +96,15 @@
 }
 
 .message-bubble.mine {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
   color: #fff;
   border-bottom-right-radius: 4px;
 }
 
 .message-bubble.theirs {
-  background: #ffffff;
-  color: #0f172a;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-card);
+  color: var(--text-main);
+  border: 1px solid var(--border);
   border-bottom-left-radius: 4px;
 }
 
@@ -188,8 +187,8 @@
 }
 
 .message-bubble.theirs .reaction-pill {
-  background: #eef2ff;
-  border-color: #dbeafe;
+  background: var(--bg-hover);
+  border-color: var(--border);
 }
 
 .reaction-menu {
@@ -199,8 +198,8 @@
   gap: 4px;
   padding: 6px;
   border-radius: 999px;
-  border: 1px solid #e2e8f0;
-  background: #fff;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
   box-shadow: 0 14px 28px rgba(15, 23, 42, 0.2);
 }
 
@@ -223,13 +222,13 @@
 }
 
 .reaction-option:hover {
-  background: #f1f5f9;
+  background: var(--bg-hover);
 }
 
 .menu-action-btn {
   border: none;
-  background: #fff;
-  color: #0f172a;
+  background: var(--bg-card);
+  color: var(--text-main);
   text-align: left;
   font-size: 13px;
   border-radius: 8px;
@@ -238,7 +237,7 @@
 }
 
 .menu-action-btn:hover {
-  background: #f1f5f9;
+  background: var(--bg-hover);
 }
 
 .menu-action-btn.danger {
@@ -250,33 +249,37 @@
   resize: vertical;
   min-height: 54px;
   border-radius: 10px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border);
   padding: 8px 10px;
   font-size: 13px;
   outline: none;
+  background: var(--bg-app);
+  color: var(--text-main);
 }
 
 .chat-composer {
   display: flex;
   gap: 10px;
   padding: 14px 16px;
-  border-top: 1px solid #e2e8f0;
-  background: #fff;
+  border-top: 1px solid var(--border);
+  background: var(--bg-card);
 }
 
 .chat-composer textarea {
   flex: 1;
   resize: none;
   border-radius: 12px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border);
   padding: 10px 12px;
   font-size: 14px;
   outline: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  background: var(--bg-app);
+  color: var(--text-main);
 }
 
 .chat-composer textarea:focus {
-  border-color: #3b82f6;
+  border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
@@ -284,7 +287,7 @@
   min-width: 96px;
   border: none;
   border-radius: 12px;
-  background: #2563eb;
+  background: var(--accent);
   color: #fff;
   font-weight: 600;
   cursor: pointer;
@@ -302,12 +305,219 @@
 
 @media (max-width: 768px) {
   .chat-card {
-    height: calc(100vh - 116px);
-    max-height: calc(100vh - 116px);
+    height: calc(100vh - 100px);
+    max-height: calc(100vh - 100px);
     border-radius: 14px;
   }
 
   .message-bubble {
     max-width: 86%;
   }
+
+  .chat-header h2 {
+    font-size: 18px;
+  }
+}
+
+/* WEBRTC CALL UI */
+.call-actions-group {
+  display: flex;
+  gap: 10px;
+  margin-right: 12px;
+}
+
+.call-btn-small {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--text-main);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.call-btn-small::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.call-btn-small:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.call-btn-small:hover::before {
+  opacity: 1;
+}
+
+.call-btn-small:active {
+  transform: translateY(0) scale(0.95);
+}
+
+.call-btn-small.audio-call {
+  color: #10b981; /* Emerald-500 */
+}
+
+.call-btn-small.audio-call:hover {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+  color: #34d399; /* Emerald-400 */
+}
+
+.call-btn-small.video-call {
+  color: #6366f1; /* Indigo-500 */
+}
+
+.call-btn-small.video-call:hover {
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+  color: #818cf8; /* Indigo-400 */
+}
+
+.call-btn-small svg {
+  z-index: 1;
+  font-size: 20px;
+}
+
+.call-ringing-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  border-radius: 12px;
+}
+
+.call-ringing-box {
+  background: var(--bg-card);
+  padding: 30px;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.call-ringing-box h3 {
+  margin: 0 0 10px;
+  font-size: 20px;
+}
+
+.call-ringing-box p {
+  margin: 0 0 24px;
+  color: var(--text-muted);
+}
+
+.ringing-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.ringing-accept {
+  background: #10b981;
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 20px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ringing-decline {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 20px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.active-call-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: #111;
+  z-index: 90;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.video-streams {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+}
+
+.remote-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.local-video {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  width: 120px;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 2px solid rgba(255,255,255,0.2);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  transform: scaleX(-1);
+}
+
+.audio-call-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1f2937, #111827);
+}
+
+.call-controls {
+  position: absolute;
+  bottom: 30px;
+  left: 0; right: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.end-call-btn {
+  background: #ef4444;
+  color: white;
+  border: none;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  transition: transform 0.2s;
+}
+
+.end-call-btn:hover {
+  transform: translateY(-2px);
 }

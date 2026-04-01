@@ -1,4 +1,16 @@
-export const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const getApiBaseUrl = () => {
+  let url = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  
+  // If the protocol is missing (e.g. "hire-helper-tztu.vercel.app"), prepend https://
+  if (url && !url.startsWith("http://") && !url.startsWith("https://")) {
+    url = `https://${url}`;
+  }
+  
+  // Remove trailing slash if present to avoid double slashes when concatenating with paths starting with /
+  return url.replace(/\/$/, "");
+};
+
+export const API_BASE_URL = getApiBaseUrl();
 
 let authToken = null;
 try {

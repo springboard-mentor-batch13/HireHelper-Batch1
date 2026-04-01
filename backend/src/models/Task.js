@@ -42,6 +42,15 @@ const taskSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    status: {
+      type: String,
+      enum: ["open", "in_progress", "completed", "cancelled"],
+      default: "open",
+    },
+    helperId: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,

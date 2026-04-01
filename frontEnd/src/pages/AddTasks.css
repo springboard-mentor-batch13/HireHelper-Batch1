@@ -1,162 +1,305 @@
- .add-task-page {
-   max-width: 720px;
-   margin: 0 auto;
-   height: 100%;
-   display: flex;
-   flex-direction: column;
-   justify-content: center;
- }
- 
- .add-task-page h2 {
-   font-size: 24px;
-   font-weight: 700;
-   color: #0f172a;
-   margin: 0 0 4px;
- }
- 
- .add-task-subtitle {
-   color: #64748b;
-   font-size: 14px;
-   margin: 0 0 20px;
- }
- 
- .add-task-card {
-   background: #ffffff;
-   border-radius: 12px;
-   padding: 24px 24px 20px;
-   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
- }
- 
- .form-section {
-   margin-bottom: 20px;
- }
-  
- .form-section:last-of-type {
-   margin-bottom: 0;
- }
- 
- .form-section-label {
-   display: flex;
-   align-items: center;
-   gap: 8px;
-   font-size: 13px;
-   font-weight: 600;
-   color: #475569;
-   text-transform: uppercase;
-   letter-spacing: 0.5px;
-   margin-bottom: 12px;
-   padding-bottom: 6px;
-   border-bottom: 1px solid #e2e8f0;
- }
-  
- .form-section-label svg {
-   font-size: 18px;
-   color: #2563eb;
- }
- 
- .form-fields {
-   display: flex;
-   flex-direction: column;
-   gap: 16px;
- }
- 
- .time-row {
-   display: grid;
-   grid-template-columns: 1fr 1fr;
-   gap: 12px;
- }
- 
- @media (max-width: 540px) {
-   .add-task-page {
-     height: auto;
-     padding: 8px 0 16px;
-   }
-   .time-row {
-     grid-template-columns: 1fr;
-   }
- }
-  .upload-area {
-    border: 2px dashed #cbd5e1;
-    border-radius: 10px;
-    padding: 24px;
-    text-align: center;
-    transition: border-color 0.2s, background-color 0.2s;
-    cursor: pointer;
+/* ═══════════════════════════════════════════════════
+   ADD TASK PAGE — Premium Modern Redesign
+   ═══════════════════════════════════════════════════ */
+
+.add-task-page {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: var(--font-main);
+  color: var(--text-main);
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - 80px);
+}
+
+/* ── HEADER ────────────────────────────────── */
+.add-task-header {
+  margin-bottom: 32px;
+  text-align: left; /* Aligned left to match My Tasks header style */
+  animation: fadeInDown 0.6s ease-out;
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.add-task-header h2 {
+  font-size: 32px;
+  font-weight: 800;
+  margin: 0 0 10px;
+  color: var(--text-main);
+  letter-spacing: -1px;
+}
+
+.add-task-subtitle {
+  color: var(--text-muted);
+  font-size: 16px;
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* ── DYNAMIC LAYOUT ────────────────────────── */
+.add-task-sections {
+  display: grid;
+  gap: 32px;
+  width: 100%;
+  margin: 0 auto 40px;
+  padding: 0 4px;
+}
+
+/* Desktop: 2-Column Grid (Task Details & Location Left, Photo & Notes Right) */
+@media (min-width: 1025px) {
+  .add-task-sections {
+    grid-template-columns: 1.1fr 0.9fr; /* Left side slightly wider for the form */
+    width: 100%;
+    /* Default align-items is stretch, which ensures cards in the same row match heights */
   }
-  
-  .upload-area:hover {
-    border-color: #2563eb;
-    background-color: #eff6ff;
+
+  .details-card { grid-column: 1; grid-row: 1; }
+  .photo-card { grid-column: 2; grid-row: 1; }
+  .location-card { grid-column: 1; grid-row: 2; }
+  .notes-card { grid-column: 2; grid-row: 2; }
+
+  .add-task-footer-progress,
+  .create-task-btn {
+    grid-column: 1 / span 2;
   }
-  
-  .upload-area.has-preview {
-    border-style: solid;
-    border-color: #2563eb;
-    background: #eff6ff;
-    padding: 16px;
-  }
-  
-  .upload-placeholder svg {
-    font-size: 40px;
-    color: #94a3b8;
-    margin-bottom: 8px;
-  }
-  
-  .upload-placeholder p {
-    color: #64748b;
-    font-size: 14px;
-    margin: 0;
-  }
-  
-  .upload-placeholder span {
-    color: #2563eb;
-    font-weight: 600;
-  }
-  
-  .upload-hint {
-    font-size: 12px;
-    color: #94a3b8;
-    margin-top: 6px;
-  }
-  
-  .preview-wrapper {
-    position: relative;
-    display: inline-block;
-  }
-  
-  .picture-preview {
-    max-height: 200px;
-    max-width: 100%;
-    border-radius: 8px;
-    display: block;
-  }
-  
-  .remove-preview {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    background: rgba(0, 0, 0, 0.6);
-    color: #fff;
-    border: none;
-    border-radius: 50%;
-    width: 28px;
-    height: 28px;
-    font-size: 16px;
-    cursor: pointer;
+}
+
+/* Mobile & Tablet: 1-Column Stack */
+@media (max-width: 1024px) {
+  .add-task-sections {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.2s;
+    flex-direction: column;
+    max-width: 720px;
   }
-  
-  .remove-preview:hover {
-    background: rgba(220, 38, 38, 0.85);
+}
+
+/* ── PREMIUM CARDS ──────────────────────────── */
+.add-task-card {
+  background: var(--bg-card);
+  padding: 32px;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: fadeInUp 0.5s ease-out both;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.add-task-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+  border-color: rgba(37, 99, 235, 0.15);
+}
+
+.card-section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 24px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.card-section-header svg {
+  color: var(--accent);
+  font-size: 24px;
+}
+
+/* ── FORM ELEMENTS ─────────────────────────── */
+.field-group {
+  margin-bottom: 24px;
+}
+
+.field-label {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 10px;
+}
+
+.time-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 600px) {
+  .time-row {
+    grid-template-columns: 1fr;
   }
-  
-  .preview-filename {
-    margin-top: 8px;
-    font-size: 12px;
-    color: #64748b;
-    word-break: break-all;
+  .add-task-card {
+    padding: 24px 20px;
   }
-  
+}
+
+/* ── MODERN UPLOAD AREA ─────────────────────── */
+.upload-area {
+  border: 2px dashed var(--border);
+  border-radius: 18px;
+  padding: 48px 24px;
+  text-align: center;
+  cursor: pointer;
+  background: rgba(var(--accent-rgb), 0.02);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 220px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.upload-area:hover {
+  border-color: var(--accent);
+  background: rgba(37, 99, 235, 0.04);
+}
+
+.upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.upload-icon-wrapper {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--bg-app);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.upload-placeholder p {
+  margin: 0;
+  font-size: 15px;
+}
+
+.upload-placeholder span {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* ── NOTES & PROGRESS ──────────────────────── */
+.notes-card {
+  background: linear-gradient(to bottom right, var(--bg-card), #f1f5f9);
+}
+
+.notes-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.notes-list li {
+  font-size: 14px;
+  color: var(--text-muted);
+  display: flex;
+  gap: 10px;
+  line-height: 1.5;
+}
+
+.notes-list li::before {
+  content: '✓';
+  color: var(--accent);
+  font-weight: 900;
+}
+
+.add-task-footer-progress {
+  width: 100%;
+}
+
+.progress-section {
+  background: var(--bg-card);
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+}
+
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.progress-bar-container {
+  height: 8px;
+  background: var(--bg-app);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.4s ease;
+}
+
+/* ── SUBMIT BUTTON ─────────────────────────── */
+.create-task-btn {
+  height: 60px !important;
+  font-size: 18px !important;
+  font-weight: 800 !important;
+  border-radius: 16px !important;
+  background: var(--accent) !important;
+  box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.4) !important;
+  transition: all 0.3s !important;
+  margin-bottom: 60px !important;
+}
+
+.create-task-btn:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 30px -5px rgba(37, 99, 235, 0.5) !important;
+}
+
+/* PREVIEW */
+.preview-wrapper {
+  position: absolute;
+  inset: 0;
+  background: #000;
+}
+
+.picture-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.remove-preview {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
