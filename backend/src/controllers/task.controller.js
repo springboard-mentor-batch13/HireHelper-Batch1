@@ -89,7 +89,30 @@ async function getMyTasks(req, res) {
       },
     ]);
 
-    res.json({ success: true, data: tasks });
+    const helperIds = [
+      ...new Set(
+        tasks
+          .flatMap((task) => (task.requests || []).map((r) => r.helper))
+          .filter(Boolean)
+      ),
+    ];
+    const helpers = await User.find({ id: { $in: helperIds } })
+      .select("id first_name last_name profile_picture email_id")
+      .lean();
+    const helpersById = {};
+    for (const helper of helpers) {
+      helpersById[helper.id] = helper;
+    }
+
+    const enrichedTasks = tasks.map((task) => ({
+      ...task,
+      requests: (task.requests || []).map((r) => ({
+        ...r,
+        helper: helpersById[r.helper] || { id: r.helper },
+      })),
+    }));
+
+    res.json({ success: true, data: enrichedTasks });
   } catch (err) {
     res.status(500).json({ success: false, message: "Failed to fetch tasks" });
   }

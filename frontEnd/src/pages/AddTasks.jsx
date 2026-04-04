@@ -1,11 +1,10 @@
 import { useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { TextField, Button, Box, Typography, InputAdornment } from "@mui/material";
+import { TextField, Button, Typography, InputAdornment } from "@mui/material";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
-import TitleIcon from "@mui/icons-material/Title";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import EventNoteIcon from "@mui/icons-material/EventNote";
 import { toast } from "react-toastify";
@@ -24,6 +23,13 @@ const AddTask = () => {
   const [picture, setPicture] = useState(null);
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  const nowString = useMemo(() => {
+    const now = new Date();
+    const offset = now.getTimezoneOffset();
+    const local = new Date(now.getTime() - offset * 60 * 1000);
+    return local.toISOString().slice(0, 16);
+  }, []);
 
   const canSubmit = useMemo(
     () => title.trim() && location.trim() && startTime && !loading,
@@ -55,11 +61,53 @@ const AddTask = () => {
     if (fileRef.current) fileRef.current.value = "";
   }
 
+  function handleStartTimeChange(e) {
+    const selected = e.target.value;
+    const now = new Date();
+    const selectedDate = new Date(selected);
+
+    if (selectedDate < now) {
+      toast.warning("Start time cannot be in the past!");
+      setStartTime("");
+      return;
+    }
+
+    setStartTime(selected);
+
+    if (endTime && new Date(endTime) <= selectedDate) {
+      setEndTime("");
+      toast.warning("End time cleared — it was before the new start time");
+    }
+  }
+
+  function handleEndTimeChange(e) {
+    const selected = e.target.value;
+
+    if (startTime && new Date(selected) <= new Date(startTime)) {
+      toast.warning("End time must be after start time!");
+      setEndTime("");
+      return;
+    }
+
+    setEndTime(selected);
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
 
     if (!canSubmit) {
       toast.warning("Please fill in all required fields");
+      return;
+    }
+
+    const now = new Date();
+    if (new Date(startTime) < now) {
+      toast.error("Start time cannot be in the past!");
+      return;
+    }
+
+    if (endTime && new Date(endTime) <= new Date(startTime)) {
+      toast.error("End time must be after start time!");
       return;
     }
 
@@ -226,18 +274,22 @@ const AddTask = () => {
                 type="datetime-local"
                 required
                 value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
+                onChange={handleStartTimeChange}
                 InputLabelProps={{ shrink: true }}
                 disabled={loading}
+                inputProps={{ min: nowString }}
+                helperText="Must be today or a future date/time"
               />
               <TextField
                 fullWidth
                 label="End Time (optional)"
                 type="datetime-local"
                 value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
+                onChange={handleEndTimeChange}
                 InputLabelProps={{ shrink: true }}
-                disabled={loading}
+                disabled={loading || !startTime}
+                inputProps={{ min: startTime || nowString }}
+                helperText={startTime ? "Must be after start time" : "Set start time first"}
               />
             </div>
           </div>

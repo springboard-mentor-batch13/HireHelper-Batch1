@@ -192,8 +192,16 @@ function SortableTaskCard({ task, onStatusChange, onEdit }) {
 
         <div className="task-card-footer">
           <PeopleIcon fontSize="small" />
-          {task.requests?.length || 0} request
-          {(task.requests?.length || 0) !== 1 ? "s" : ""}
+          {(() => {
+            const accepted = task.requests?.find((r) => r.status === "accepted");
+            if (accepted) {
+              const name = accepted.helper?.first_name
+                ? `${accepted.helper.first_name} ${accepted.helper.last_name}`
+                : "Someone";
+              return `Accepted: ${name}`;
+            }
+            return `${task.requests?.length || 0} request${(task.requests?.length || 0) !== 1 ? "s" : ""}`;
+          })()}
         </div>
       </div>
     </div>

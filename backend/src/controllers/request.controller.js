@@ -17,6 +17,11 @@ async function createRequest(req, res) {
       return res.status(404).json({ success: false, message: "Task not found" });
     }
 
+    const alreadyAccepted = await Request.findOne({ task: taskId, status: "accepted" });
+    if (alreadyAccepted) {
+      return res.status(400).json({ success: false, message: "This task already has an accepted helper" });
+    }
+
     const existing = await Request.findOne({ task: taskId, helper: req.user.id });
     if (existing) {
       return res.status(400).json({ success: false, message: "You have already requested this task" });
@@ -164,14 +169,54 @@ async function updateRequestStatus(req, res) {
       return res.status(403).json({ success: false, message: "Not authorized to update this request" });
     }
 
+    if (status === "accepted") {
+      const alreadyAccepted = await Request.findOne({
+        task: request.task,
+        status: "accepted",
+        _id: { $ne: id },
+      });
+      if (alreadyAccepted) {
+        return res.status(400).json({
+          success: false,
+          message: "You have already accepted someone for this task",
+        });
+      }
+    }
+
     const updated = await Request.findByIdAndUpdate(
       id,
       { status },
       { new: true }
     );
 
-    // If accepted, update task status and helperId
+    // If accepted, auto-decline pending alternatives and update task assignment
     if (status === "accepted") {
+      const otherPending = await Request.find({
+        task: request.task,
+        status: "pending",
+        _id: { $ne: id },
+      }).lean();
+
+      if (otherPending.length > 0) {
+        await Request.updateMany(
+          { task: request.task, status: "pending", _id: { $ne: id } },
+          { status: "declined" }
+        );
+
+        for (const other of otherPending) {
+          try {
+            await Notification.create({
+              userId: other.helper,
+              message: `Your request for "${task.title}" was declined`,
+              requestId: other._id,
+              taskId: task._id,
+            });
+          } catch (notifErr) {
+            console.error("Notification creation failed:", notifErr);
+          }
+        }
+      }
+
       await Task.findByIdAndUpdate(request.task, {
         status: "in_progress",
         helperId: request.helper,
