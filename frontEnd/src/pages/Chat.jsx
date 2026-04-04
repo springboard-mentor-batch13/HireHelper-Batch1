@@ -18,6 +18,7 @@ const Chat = () => {
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editText, setEditText] = useState("");
   const [contextMenu, setContextMenu] = useState(null);
+  const [taskTitle, setTaskTitle] = useState("");
 
   const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
@@ -50,6 +51,19 @@ const Chat = () => {
     }
     return localStorage.getItem("userId");
   }, []);
+
+  useEffect(() => {
+    async function fetchTask() {
+      try {
+        const res = await api.get(`/api/tasks/${taskId}`);
+        const task = res?.data || res;
+        setTaskTitle(task?.title || "Task Chat");
+      } catch {
+        setTaskTitle("Task Chat");
+      }
+    }
+    fetchTask();
+  }, [taskId]);
 
   // LOAD OLD MESSAGES
   useEffect(() => {
@@ -348,9 +362,11 @@ const Chat = () => {
   const sendMessage = () => {
     if (!text.trim() || !currentUser || !socketRef.current?.connected) return;
 
+    const { senderName } = getSenderInfo();
     const msgData = {
       taskId,
       senderId: currentUser,
+      senderName,
       text,
       time: new Date().toLocaleTimeString(),
     };
@@ -468,8 +484,8 @@ const Chat = () => {
     <div className="chat-card">
       <div className="chat-header">
         <div>
-          <h2>Task Chat</h2>
-          <p>Task ID: {taskId}</p>
+          <h2>{taskTitle || "Task Chat"}</h2>
+          <p style={{ fontSize: "12px", color: "#94a3b8" }}>Task Chat</p>
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           {callState === "idle" && (
@@ -575,6 +591,11 @@ const Chat = () => {
                 key={`${m._id || i}-${m.time || ""}`}
                 className={`message-row ${isMine ? "mine" : "theirs"}`}
               >
+                {!isMine && (
+                  <span className="message-sender-name">
+                    {m.senderName || "User"}
+                  </span>
+                )}
                 <div
                   className={`message-bubble ${isMine ? "mine" : "theirs"}`}
                   onContextMenu={(e) => openContextMenu(e, m, isMine)}
